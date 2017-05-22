@@ -8,8 +8,9 @@ that is passed.
 :license: All rights reserved
 """
 
-import os
 import logging
+from flask import request
+from os.environ import get
 
 
 ''' Define the logging format '''
@@ -25,6 +26,27 @@ log_format = """
 [message]        %(message)s"""
 
 
+def log_exception(self, exc_info, error_id=None):
+    """Override."""
+    self.logger.error("""Path %s
+    HTTP Method: %s
+    Client IP Address: %s
+    User Agent: %s
+    User Platform: %s
+    User Browser: %s
+    User Browser Version: %s
+    """ % (request.path,
+           request.method,
+           request.remote_addr,
+           request.user_agent.string,
+           request.user_agent.platform,
+           request.user_agent.browser,
+           request.user_agent.version
+           ),
+        exc_info=exc_info,
+        extra={'error_id': error_id})
+
+
 def configure_logging(application):
     """
     Configure logging on the flask application.
@@ -36,63 +58,14 @@ def configure_logging(application):
     """
     application.debug_log_format = log_format
 
-    environment = os.environ['ENVIRONMENT']
+    environment = get('ENVIRONMENT', 'local')
 
-    LOG_LEVEL = logging.ERROR
     if environment == 'local':
         LOG_LEVEL = logging.INFO
     elif environment == 'development':
         LOG_LEVEL = logging.WARNING
+    else:
+        LOG_LEVEL = logging.ERROR
 
     ''' Sets the application logger level '''
     application.logger.setLevel(LOG_LEVEL)
-
-    log_directory = os.environ['LOG_PATH']
-
-    ''' Application log '''
-    application_log_file_handler = logging.FileHandler(
-        log_directory + 'application.log'
-    )
-    application_log_file_handler.setFormatter(logging.Formatter(log_format))
-    application.logger.addHandler(application_log_file_handler)
-
-    ''' Dynamo log '''
-    dynamo_logger = logging.getLogger('boto')
-    dynamo_logger.setLevel(logging.INFO)
-    dynamo_log_file_handler = logging.FileHandler(
-        log_directory + 'dynamo.log')
-    dynamo_log_file_handler.setLevel(logging.INFO)
-    dynamo_log_file_handler.setFormatter(logging.Formatter(log_format))
-    dynamo_logger.addHandler(dynamo_log_file_handler)
-
-
-def add_logger(application):
-    """
-    Add logger and exception handler for log file.
-
-    Parameters
-    ----------
-    application : flask.Flask
-        The Flask application instance.
-    """
-    application.debug_log_format = log_format
-
-    environment = os.environ['ENVIRONMENT']
-
-    LOG_LEVEL = logging.ERROR
-    if environment == 'local':
-        LOG_LEVEL = logging.INFO
-    elif environment == 'development':
-        LOG_LEVEL = logging.WARNING
-
-    ''' Sets the application logger level '''
-    application.logger.setLevel(LOG_LEVEL)
-
-    log_directory = os.environ['LOG_PATH']
-
-    ''' Application log '''
-    application_log_file_handler = logging.FileHandler(
-        log_directory + 'application.log'
-    )
-    application_log_file_handler.setFormatter(logging.Formatter(log_format))
-    application.logger.addHandler(application_log_file_handler)

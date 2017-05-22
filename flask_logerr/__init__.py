@@ -5,15 +5,27 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-import os
 import logging
-from flask import Flask, request
+from os import path
+from os.environ import get
 from exceptions import handle_error
-from logger import log_format, add_logger
+from flask import _app_ctx_stack as stack
+from logger import log_exception, configure_logger, log_format
+from subprocess import call
 
 
-class LogErr(Flask):
+class LogErr():
     """Override log_exception."""
+
+    log_format = log_format
+    loggers = {'application': 'application',
+               'dynamo': 'boto'}
+    levels = {50: logging.CRITICAL,
+              40: logging.ERROR,
+              30: logging.WARNING,
+              20: logging.INFO,
+              10: logging.DEBUG,
+              0: logging.NOTSET}
 
     def __init__(self, app=None, api=None):
         """
@@ -43,50 +55,46 @@ class LogErr(Flask):
             Optional Flask-RESTful Api.
         """
         self.app = app
+        self.app.log_exception = log_exception
         self.app.handle_http_exception = handle_error
-        self.configure_logger(self.app)
+        configure_logger(self.app)
         if api:
             self.api.handle_error = handle_error
+        self.init_settings()
 
-    def log_exception(self, exc_info, error_id=None):
-        """Override."""
-        self.logger.error("""Path %s
-        HTTP Method: %s
-        Client IP Address: %s
-        User Agent: %s
-        User Platform: %s
-        User Browser: %s
-        User Browser Version: %s
-        """ % (request.path,
-               request.method,
-               request.remote_addr,
-               request.user_agent.string,
-               request.user_agent.platform,
-               request.user_agent.browser,
-               request.user_agent.version
-               ),
-            exc_info=exc_info,
-            extra={'error_id': error_id})
+    def init_settings(self):
+        """Initialize settings from environment variables."""
+        self.app.config.set_default('LOG_PATH', get('LOG_PATH', './logs'))
+        self.app.config.set_default('LOG_LEVEL', get('LOG_LEVEL', 'INFO'))
+        self.app.config.set_default('LOG_LIST', self.loggers.values())
 
-    def configure_logger(self, application):
-        """
-        Configure logginer on Flask application.
+    def add_logger(self, logger, log_path):
+        """Add logger from logging.getLogger."""
+        if logger is 'application':
+            _logger = self.app.logger
+        else:
+            _logger = logging.getlogger(logger)
+        _logger.setLevel(self.levels[self.app.level])
+        log_file_handler = logging.FileHandler(log_path)
+        log_file_handler.setLevel(self.levels[self.app.level])
+        log_file_handler.setFormatter(logging.Formatter(self.log_format))
+        _logger.addHandler(log_file_handler)
 
-        Parameters
-        ----------
-        application : flask.Flask
-            Flask applciation instance.
-        """
-        application.debug_log_format = log_format
-        # Environment
-        environment = os.environ.get('ENVIRONMENT', 'local')
-
-        LOG_LEVEL = logging.INFO
-        if environment == 'development':
-            LOG_LEVEL = logging.WARNING
-        if environment == 'staging':
-            LOG_LEVEL = logging.ERROR
-        if environment == 'production':
-            LOG_LEVEL = logging.CRITICAL
-
-        application.logger.setLevel(LOG_LEVEL)
+    @property
+    def logs(self):
+        """Log files property."""
+        ctx = stack.top
+        if ctx is not None:
+            ctx.logs = []
+            if not hasattr(ctx, 'logs'):
+                # Create directory if not already there
+                if not path.isdir(self.app.config['LOG_PATH']):
+                    call(['mkdir', '-p', self.app.config['LOG_PATH']])
+                # Create logs if not already there
+                for log in self.app.config['LOG_LIST']:
+                    log_path = self.app.config['LOG_PATH'] + '/' + log + '.log'
+                    if not path.isfile(log_path):
+                        call(['touch', log_path])
+                    self.add_logger(self.loggers[log], log_path)
+                    ctx.logs.append(log_path)
+            return ctx.logs
