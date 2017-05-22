@@ -17,7 +17,7 @@ a Flask application utilizing Flask-RESTful seamlessly!
 
 ## Features
 
-Coming soon...
+Environment `local`, `development`, `staging`, `production` controls log level of Flask application.
 
 ## Installation
 
