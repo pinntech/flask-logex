@@ -92,8 +92,8 @@ class LogEx():
             raise AttributeError("Logex is not initialized, run init_app")
         ctx = stack.top
         if ctx is not None:
-            ctx.logs = {}
             if not hasattr(ctx, 'logs'):
+                ctx.logs = {}
                 if not os.path.isdir(self.app.config['LOG_PATH']):
                     call(['mkdir', '-p', self.app.config['LOG_PATH']])
 
