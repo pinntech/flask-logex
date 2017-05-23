@@ -73,7 +73,7 @@ class LogEx():
         """Initialize settings from environment variables."""
         self.app.config.setdefault('LOG_PATH', os.environ.get('LOG_PATH', './logs'))
         self.app.config.setdefault('LOG_LEVEL', os.environ.get('LOG_LEVEL', 'INFO'))
-        self.app.config.setdefault('LOG_LIST', self.loggers.values())
+        self.app.config.setdefault('LOG_LIST', self.loggers.keys())
 
     def add_logger(self, logger, log_path):
         """Add logger from logging.getLogger."""
