@@ -77,10 +77,11 @@ class LogEx():
 
     def add_logger(self, logger, log_path):
         """Add logger from logging.getLogger."""
-        _logger = logging.getlogger(logger)
-        _logger.setLevel(self.levels[self.app.level])
+        _logger = logging.getLogger(logger)
+        level = self.levels[self.app.logger.level]
+        _logger.setLevel(level)
         log_file_handler = logging.FileHandler(log_path)
-        log_file_handler.setLevel(self.levels[self.app.level])
+        log_file_handler.setLevel(level)
         log_file_handler.setFormatter(logging.Formatter(self.log_format))
         _logger.addHandler(log_file_handler)
         return _logger
@@ -94,19 +95,15 @@ class LogEx():
         if ctx is not None:
             if not hasattr(ctx, 'logs'):
                 ctx.logs = {}
-                if not os.path.isdir(self.app.config['LOG_PATH']):
-                    call(['mkdir', '-p', self.app.config['LOG_PATH']])
+                log_path = self.app.config['LOG_PATH']
+                log_list = self.app.config['LOG_LIST']
+                if not os.path.isdir(log_path):
+                    call(['mkdir', '-p', log_path])
 
-                for log in self.app.config['LOG_LIST']:
-                    log_path = self.app.config['LOG_PATH'] + '/' + log + '.log'
-                    if not os.path.isfile(log_path):
-                        call(['touch', log_path])
+                for log in log_list:
+                    path = log_path + '/' + log + '.log'
+                    if not os.path.isfile(path):
+                        call(['touch', path])
                     logger = self.add_logger(self.loggers[log], log_path)
                     ctx.logs[log] = logger
             return ctx.logs
-
-    def __getattr__(self, name):
-        """Override getter to focus on loggers."""
-        if name in self.logs:
-            return self.logs[name]
-        raise AttributeError("No log handler for {}".format(name))
