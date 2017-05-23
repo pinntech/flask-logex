@@ -104,6 +104,6 @@ class LogEx():
                     path = log_path + '/' + log + '.log'
                     if not os.path.isfile(path):
                         call(['touch', path])
-                    logger = self.add_logger(self.loggers[log], log_path)
+                    logger = self.add_logger(self.loggers[log], path)
                     ctx.logs[log] = logger
             return ctx.logs
