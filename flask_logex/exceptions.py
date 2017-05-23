@@ -5,11 +5,21 @@ Define all possible request exceptions of the API.
 :license: All rights reserved
 """
 
-import sys
 import boto
+import logging
 from flask import jsonify
-from flask import current_app as application
+from uuid import uuid4
+from logger import log_exception
 from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import default_exceptions
+
+
+def configure_exceptions(app, api=None):
+    """Configure exception handler for Flask and Flask-Restful."""
+    for code in default_exceptions:
+        app.errorhandler(code)(handle_error)
+    if api:
+        api.handle_error = handle_error
 
 
 def handle_error(e):
@@ -23,6 +33,7 @@ def handle_error(e):
     """
     code = 500
     message = str(e)
+    error_id = uuid4()
 
     # ValueError (parameter validation)
     if isinstance(e, ValueError):
@@ -35,24 +46,14 @@ def handle_error(e):
         message = e.description
         if hasattr(e, 'data') and 'message' in e.data:
             message = str(e.data['message'])
+        log_exception(logging.getLogger('application'), error_id, message)
 
     # DynamoDB
     if isinstance(e, boto.exception.JSONResponseError):
         code, message = handle_dynamo_error(e)
+        log_exception(logging.getLogger('boto'), error_id, message)
 
-    # Log Application Error
-    if code >= 500:
-        exc_info = sys.exc_info()
-        if exc_info[1] is None:
-            exc_info = message
-        application.log_exception(exc_info)
-    exc_info = sys.exc_info()
-
-    if exc_info[1] is None:
-        exc_info = message
-    application.log_exception(exc_info)
-
-    return jsonify(message=message, code=code), code
+    return jsonify(message=message, code=code, error_id=error_id), code
 
 
 def handle_dynamo_error(e):

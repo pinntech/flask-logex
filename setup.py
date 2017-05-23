@@ -7,13 +7,13 @@ with open("requirements.txt") as f:
 
 VERSION = '0.0.1'
 
-setup(name='Flask-LogErr',
+setup(name='Flask-LogEx',
       version=VERSION,
       description='Flask Logging and Error Handling Extension.',
       author='Tim Co',
       author_email='tim@pinn.ai',
-      url='https://github.com/tcco/flask-logerr',
-      packages=['flask_logerr'],
+      url='https://github.com/tcco/flask-logex',
+      packages=['flask_logex'],
       install_requires=required,
 
       # Packaging options:

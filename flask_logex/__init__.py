@@ -8,14 +8,14 @@ Contains configuration options for local, development, staging and production.
 import logging
 from os import path
 from os.environ import get
-from exceptions import handle_error
+from exceptions import configure_exceptions
 from flask import _app_ctx_stack as stack
-from logger import log_exception, configure_logger, log_format
+from logger import configure_logger, log_format
 from subprocess import call
 
 
-class LogErr():
-    """Override log_exception."""
+class LogEx():
+    """LogEx Extension Class."""
 
     log_format = log_format
     loggers = {'application': 'application',
@@ -29,7 +29,7 @@ class LogErr():
 
     def __init__(self, app=None, api=None):
         """
-        Initialize LogErr Instance.
+        Initialize LogEx Instance.
 
         Parameters
         ----------
@@ -45,7 +45,7 @@ class LogErr():
 
     def init_app(self, app, api=None):
         """
-        Initialize LogErr Instance.
+        Initialize LogEx Instance.
 
         Parameters
         ----------
@@ -55,11 +55,9 @@ class LogErr():
             Optional Flask-RESTful Api.
         """
         self.app = app
-        self.app.log_exception = log_exception
-        self.app.handle_http_exception = handle_error
-        configure_logger(self.app)
-        if api:
-            self.api.handle_error = handle_error
+        self.api = api
+        configure_logger(app)
+        configure_exceptions(app, api)
         self.init_settings()
 
     def init_settings(self):
@@ -70,31 +68,36 @@ class LogErr():
 
     def add_logger(self, logger, log_path):
         """Add logger from logging.getLogger."""
-        if logger is 'application':
-            _logger = self.app.logger
-        else:
-            _logger = logging.getlogger(logger)
+        _logger = logging.getlogger(logger)
         _logger.setLevel(self.levels[self.app.level])
         log_file_handler = logging.FileHandler(log_path)
         log_file_handler.setLevel(self.levels[self.app.level])
         log_file_handler.setFormatter(logging.Formatter(self.log_format))
         _logger.addHandler(log_file_handler)
+        return _logger
 
     @property
     def logs(self):
         """Log files property."""
+        if self.app is None:
+            raise AttributeError("Logex is not initialized, run init_app")
         ctx = stack.top
         if ctx is not None:
-            ctx.logs = []
+            ctx.logs = {}
             if not hasattr(ctx, 'logs'):
-                # Create directory if not already there
                 if not path.isdir(self.app.config['LOG_PATH']):
                     call(['mkdir', '-p', self.app.config['LOG_PATH']])
-                # Create logs if not already there
+
                 for log in self.app.config['LOG_LIST']:
                     log_path = self.app.config['LOG_PATH'] + '/' + log + '.log'
                     if not path.isfile(log_path):
                         call(['touch', log_path])
-                    self.add_logger(self.loggers[log], log_path)
-                    ctx.logs.append(log_path)
+                    logger = self.add_logger(self.loggers[log], log_path)
+                    ctx.logs[log] = logger
             return ctx.logs
+
+    def __getattr__(self, name):
+        """Override getter to focus on loggers."""
+        if name in self.logs:
+            return self.logs[name]
+        raise AttributeError("No log handler for {}".format(name))

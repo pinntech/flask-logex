@@ -9,6 +9,7 @@ that is passed.
 """
 
 import logging
+import sys
 from flask import request
 from os.environ import get
 
@@ -26,9 +27,12 @@ log_format = """
 [message]        %(message)s"""
 
 
-def log_exception(self, exc_info, error_id=None):
+def log_exception(logger, error_id, message):
     """Override."""
-    self.logger.error("""Path %s
+    exc_info = sys.exc_info()
+    if exc_info[1] is None:
+        exc_info = message
+    logger.error("""Path %s
     HTTP Method: %s
     Client IP Address: %s
     User Agent: %s
@@ -44,7 +48,8 @@ def log_exception(self, exc_info, error_id=None):
            request.user_agent.version
            ),
         exc_info=exc_info,
-        extra={'error_id': error_id})
+        extra={"error_id": error_id,
+               "message": message})
 
 
 def configure_logging(application):
@@ -56,16 +61,15 @@ def configure_logging(application):
     application : flask.Flask
         The Flask application instance.
     """
+    # Log format
     application.debug_log_format = log_format
-
+    # Environment determines log level
     environment = get('ENVIRONMENT', 'local')
-
     if environment == 'local':
         LOG_LEVEL = logging.INFO
     elif environment == 'development':
         LOG_LEVEL = logging.WARNING
     else:
         LOG_LEVEL = logging.ERROR
-
-    ''' Sets the application logger level '''
+    # Set application log level
     application.logger.setLevel(LOG_LEVEL)

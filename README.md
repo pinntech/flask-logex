@@ -1,7 +1,7 @@
-# flask-logerr
+# flask-logex
 Flask Logging and Error Exception Extension
 
-LogErr combines makes error handling, exception catching, and logging 
+LogEx combines makes error handling, exception catching, and logging 
 accessible and customizable. This package allows for trace id within
 logs easy to follow and diagnose issues with application. Integrate
 a Flask application utilizing Flask-RESTful seamlessly!
