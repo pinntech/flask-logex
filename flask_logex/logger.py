@@ -9,9 +9,9 @@ that is passed.
 """
 
 import logging
+import os
 import sys
 from flask import request
-from os.environ import get
 
 
 ''' Define the logging format '''
@@ -64,7 +64,7 @@ def configure_logging(application):
     # Log format
     application.debug_log_format = log_format
     # Environment determines log level
-    environment = get('ENVIRONMENT', 'local')
+    environment = os.environ.get('ENVIRONMENT', 'local')
     if environment == 'local':
         LOG_LEVEL = logging.INFO
     elif environment == 'development':

@@ -6,12 +6,21 @@ Contains configuration options for local, development, staging and production.
 """
 
 import logging
-from os import path
-from os.environ import get
+import os
 from exceptions import configure_exceptions
 from flask import _app_ctx_stack as stack
-from logger import configure_logger, log_format
+from logger import configure_logging, log_format
 from subprocess import call
+
+from exceptions import BadRequest  # NOQA
+from exceptions import Unauthorized  # NOQA
+from exceptions import Forbidden  # NOQA
+from exceptions import NotFound  # NOQA
+from exceptions import MethodNotAllowed  # NOQA
+from exceptions import InvalidAPIVersion  # NOQA
+from exceptions import RateLimitExceeded  # NOQA
+from exceptions import ServerError  # NOQA
+from exceptions import ServiceUnavailable  # NOQA
 
 
 class LogEx():
@@ -56,14 +65,14 @@ class LogEx():
         """
         self.app = app
         self.api = api
-        configure_logger(app)
+        configure_logging(app)
         configure_exceptions(app, api)
         self.init_settings()
 
     def init_settings(self):
         """Initialize settings from environment variables."""
-        self.app.config.set_default('LOG_PATH', get('LOG_PATH', './logs'))
-        self.app.config.set_default('LOG_LEVEL', get('LOG_LEVEL', 'INFO'))
+        self.app.config.set_default('LOG_PATH', os.environ.get('LOG_PATH', './logs'))
+        self.app.config.set_default('LOG_LEVEL', os.environget('LOG_LEVEL', 'INFO'))
         self.app.config.set_default('LOG_LIST', self.loggers.values())
 
     def add_logger(self, logger, log_path):
@@ -85,12 +94,12 @@ class LogEx():
         if ctx is not None:
             ctx.logs = {}
             if not hasattr(ctx, 'logs'):
-                if not path.isdir(self.app.config['LOG_PATH']):
+                if not os.path.isdir(self.app.config['LOG_PATH']):
                     call(['mkdir', '-p', self.app.config['LOG_PATH']])
 
                 for log in self.app.config['LOG_LIST']:
                     log_path = self.app.config['LOG_PATH'] + '/' + log + '.log'
-                    if not path.isfile(log_path):
+                    if not os.path.isfile(log_path):
                         call(['touch', log_path])
                     logger = self.add_logger(self.loggers[log], log_path)
                     ctx.logs[log] = logger
