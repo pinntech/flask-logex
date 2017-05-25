@@ -48,8 +48,7 @@ def log_exception(logger, error_id, message):
            request.user_agent.version
            ),
         exc_info=exc_info,
-        extra={"error_id": error_id,
-               "message": message})
+        extra={"error_id": error_id})
 
 
 def configure_logging(application):

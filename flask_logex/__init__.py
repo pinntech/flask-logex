@@ -7,20 +7,12 @@ Contains configuration options for local, development, staging and production.
 
 import logging
 import os
+from exceptions import add_exception
 from exceptions import configure_exceptions
 from flask import _app_ctx_stack as stack
 from logger import configure_logging, log_format
 from subprocess import call
-
-from exceptions import BadRequest  # NOQA
-from exceptions import Unauthorized  # NOQA
-from exceptions import Forbidden  # NOQA
-from exceptions import NotFound  # NOQA
-from exceptions import MethodNotAllowed  # NOQA
-from exceptions import InvalidAPIVersion  # NOQA
-from exceptions import RateLimitExceeded  # NOQA
-from exceptions import ServerError  # NOQA
-from exceptions import ServiceUnavailable  # NOQA
+from werkzeug.exceptions import *  # NOQA
 
 
 class LogEx():
@@ -71,7 +63,7 @@ class LogEx():
 
     def init_settings(self):
         """Initialize settings from environment variables."""
-        self.app.config.setdefault('LOG_PATH', os.environ.get('LOG_PATH', './logs'))
+        self.app.config.setdefault('LOG_PATH', os.environ.get('LOG_PATH', './logs/'))
         self.app.config.setdefault('LOG_LEVEL', os.environ.get('LOG_LEVEL', 'INFO'))
         self.app.config.setdefault('LOG_LIST', self.loggers.keys())
 
@@ -85,6 +77,10 @@ class LogEx():
         log_file_handler.setFormatter(logging.Formatter(self.log_format))
         _logger.addHandler(log_file_handler)
         return _logger
+
+    def add_exception(self, e):
+        """Add werkzeug.exceptions.HTTPException subclass to handlers."""
+        add_exception(self.app, e)
 
     @property
     def logs(self):
@@ -101,7 +97,7 @@ class LogEx():
                     call(['mkdir', '-p', log_path])
 
                 for log in log_list:
-                    path = log_path + '/' + log + '.log'
+                    path = log_path + log + '.log'
                     if not os.path.isfile(path):
                         call(['touch', path])
                     logger = self.add_logger(self.loggers[log], path)

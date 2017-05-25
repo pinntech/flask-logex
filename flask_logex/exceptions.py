@@ -22,6 +22,24 @@ def configure_exceptions(app, api=None):
         api.handle_error = handle_error
 
 
+def add_exception(app, e):
+    """Add exception to application."""
+    app.errorhandler(e)(handle_error)
+
+
+LOGEX_ERROR_MAP = {
+    400: "bad_request",
+    401: "unauthorized",
+    404: "method_not_allowed",
+    409: "conflict",
+    422: "request_failed",
+    500: "internal_server_error",
+    502: "bad_gateway",
+    503: "service_unavailable",
+    504: "gateway_timeout"
+}
+
+
 def handle_error(e):
     """
     Handle for exceptions thrown and returns a Flask JSON reponse.
@@ -34,162 +52,29 @@ def handle_error(e):
     code = 500
     message = str(e)
     error_id = uuid4()
+    error_type = None
+    error = {"error_id": str(error_id)}
 
-    # ValueError (parameter validation)
-    if isinstance(e, ValueError):
-        code = 400
-        message = str(e)
-
-    # Generic
+    # HTTP
     if isinstance(e, HTTPException):
         code = e.code
         message = e.description
-        if hasattr(e, 'data') and 'message' in e.data:
-            message = str(e.data['message'])
-        log_exception(logging.getLogger('application'), error_id, message)
+        if hasattr(e, "data") and "message" in e.data:
+            message = str(e.data["message"])
+        log_exception(logging.getLogger("application"), error_id, message)
 
     # DynamoDB
     if isinstance(e, boto.exception.JSONResponseError):
-        code, message = handle_dynamo_error(e)
-        log_exception(logging.getLogger('boto'), error_id, message)
+        code = 400
+        message = str(e.message)
+        log_exception(logging.getLogger("boto"), error_id, message)
 
-    return jsonify(message=message, code=code, error_id=error_id), code
+    error_type = e.error_type if hasattr(e, "error_type") else LOGEX_ERROR_MAP[code]
+    error_message = e.error_message if hasattr(e, "error_message") else message
 
+    error["type"] = error_type
+    error['message'] = error_message
 
-def handle_dynamo_error(e):
-    """
-    Handle a dynamo exception and return (code, message) tuple.
-
-    Parameters
-    ----------
-    e : flask_dynamo.errors
-        Error raised by flask dynamo
-
-    Returns
-    -------
-    tuple
-        (code, message)
-    """
-    if isinstance(e, boto.exception.JSONResponseError):
-        return(400, str(e.message))
-    return (500, str(e))
-
-
-class BadRequest(HTTPException):
-    """
-    400 Bad Request.
-
-    The request sent was malformed and could not be understood.
-    """
-
-    code = 400
-    description = (
-        'Bad request, the request could not be understood by the server '
-        'due to malformed syntax'
-    )
-
-
-class Unauthorized(HTTPException):
-    """
-    401 Unauthorized.
-
-    Not authorized on the server.
-    """
-
-    code = 401
-    description = (
-        'Unauthorized, bad credentials'
-    )
-
-
-class Forbidden(HTTPException):
-    """
-    403 Forbidden.
-
-    Not allowed to access this resource.
-    """
-
-    code = 403
-    description = (
-        'Forbidden, neccesary permissions are not granted for the resource'
-    )
-
-
-class NotFound(HTTPException):
-    """
-    404 Not Found.
-
-    This resource does not exist here.
-    """
-
-    code = 404
-    message = (
-        'Not found, the requested resource is not here'
-    )
-
-
-class MethodNotAllowed(HTTPException):
-    """
-    405 Method Not Allowed.
-
-    The method used is not allowed for this call.
-    """
-
-    code = 405
-    description = (
-        'Method not allowed, The HTTP method is not allowed for this resource'
-    )
-
-
-class InvalidAPIVersion(HTTPException):
-    """
-    406 Invalid API Version.
-
-    The version specified is not acceptable.
-    """
-
-    code = 406
-    description = (
-        'API version is missing or invalid'
-    )
-
-
-class RateLimitExceeded(HTTPException):
-    """
-    429 Rate Limit Exceeded.
-
-    Too many requests were sent too fast.
-    """
-
-    code = 429
-    description = (
-        'Rate limit exceeded, too many requests too quickly'
-    )
-
-
-class ServerError(HTTPException):
-    """
-    500 Server Error.
-
-    Something went completely wrong.
-    """
-
-    code = 500
-    description = (
-        'Server error, The server encountered an unexpected condition '
-        'which prevented it from fulfilling the request'
-    )
-
-
-class ServiceUnavailable(HTTPException):
-    """
-    503 Service Unavailable.
-
-    Server overload or under maintainance.
-    """
-
-    code = 503
-    description = (
-        'Server unable to handle request due to temporary overloading or '
-        'maintainance of the server'
-    )
+    return jsonify(message=message,
+                   code=code,
+                   error=error), code
