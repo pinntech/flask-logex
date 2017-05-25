@@ -68,9 +68,9 @@ class LogEx():
 
     def init_settings(self):
         """Initialize settings from environment variables."""
-        self.app.config.setdefault('LOG_PATH', os.environ.get('LOG_PATH', './logs/'))
-        self.app.config.setdefault('LOG_LEVEL', os.environ.get('LOG_LEVEL', 'INFO'))
-        self.app.config.setdefault('LOG_LIST', self.loggers.keys())
+        self.LOG_PATH = os.environ.get("LOG_PATH", "./logs")
+        self.LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
+        self.LOG_LIST = self.loggers.keys()
 
     def add_logger(self, logger, log_path):
         """Add logger from logging.getLogger."""
@@ -86,13 +86,11 @@ class LogEx():
         if self.app is None:
             raise AttributeError("Logex is not initialized, run init_app")
         logs = {}
-        log_path = self.app.config['LOG_PATH']
-        log_list = self.app.config['LOG_LIST']
-        if not os.path.isdir(log_path):
-            call(['mkdir', '-p', log_path])
+        if not os.path.isdir(self.LOG_PATH):
+            call(['mkdir', '-p', self.LOG_PATH])
 
-        for log in log_list:
-            path = log_path + log + '.log'
+        for log in self.LOG_LIST:
+            path = self.LOG_PATH + log + '.log'
             if not os.path.isfile(path):
                 call(['touch', path])
             logger = get_logger(self.loggers[log])

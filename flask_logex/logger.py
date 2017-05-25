@@ -11,7 +11,6 @@ that is passed.
 import logging
 import os
 import sys
-from flask import current_app as app
 from flask import request
 
 
@@ -30,7 +29,7 @@ log_format = """
 
 def get_logger(log_name):
     if log_name is "application":
-        return app.logger
+        return logging.getLogger(__name__)
     else:
         return logging.getLogger(log_name)
 
