@@ -95,10 +95,12 @@ class LogExTest(TestCase):
 
     def resource_check(self, resource, code, fail=False):
         resp = self.test_client.get(resource)
+        self.assertEqual(resp.status_code, code)
         data = json.loads(resp.data)
-        self.assertEqual(data["code"], code)
         self.assertIsNotNone(data, "error")
-        self.assertIsNotNone(data, "message")
         self.assertIsNotNone(data["error"], "message")
+        self.assertIsNotNone(data["error"], "type")
+        self.assertIsNotNone(data["error"], "id")
         if fail:
+            print data
             self.assertEqual(2, 1)

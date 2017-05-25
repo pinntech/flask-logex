@@ -4,7 +4,7 @@ Flask Logging and Error Exception Extension
 LogEx makes error handling, exception catching, and logging
 accessible and customizable. This package allows for trace id within
 logs easy to follow and diagnose issues with application. Integrate
-a Flask application utilizing Flask-RESTful seamlessly!
+a Flask application seamlessly! Flask-RESTFul is supported as well.
 
 ## Table of Contents
 
@@ -16,29 +16,40 @@ a Flask application utilizing Flask-RESTful seamlessly!
 * [Contributing](#contributing)
 
 ## Features
-```
 Follows werkzeug.exceptions protocol
 
 Dynamic creation of loggers attached to appliations and log files in designated log paths.
+Log levels are maintained by `ENVIRONMENT` variable.
 
-Environment `local`, `development`, `staging`, `production` controls log level of Flask application.
+| Environment    | Level      |
+| -------------- | ---------- |
+| `local`        | `INFO`     |
+| `development`  | `WARNING`  |
+| `staging`      | `ERROR`    |
+| `production`   | `ERROR`    |
 
-Access loggers with LogEx().`logger`
+Access loggers with LogEx().`logger` for custom logging throughout application.
 
-UUID error_id for log traceback.
+UUID error_id for log traceback, generated at request time.
 
-Custom log formatting and log handlers
+Custom log formatting, handlers, and exceptions to generate logging.
+See `flask_logex.exceptions.handle_error`
 
-Application Errors checking for `error_type` and `error_message`. Sample
-is flask_logex.exceptions.AppException
-```
+Application Errors checking for `error_type` and `error_message`.
+Sample is `flask_logex.exceptions.AppException`
+
+
 ## Installation
 
-Coming soon...
+1. Clone the repository `git clone https://github.com/tcco/flask-logex.git`
+2. Assure `click` is pip installed and `cd flask-logex`
+3. Run `./manage install`
+4. Initialize virtualenv with `. .venv/bin/activate`
+5. To make sure the install worked properly run `./manage unit_tests`
 
 ## Usage
 
-## Initialization
+### Initialization
 ```
 from flask_logex import LogEx
 logex = LogEx()
@@ -51,53 +62,54 @@ api = Api(app)
 logex.init_app(app, api)
 ```
 
-## Customization
+### Customization
 
-Logging
-```
+#### Formatting
 Defaults are set in flask_logex.Logex.loggers and flask_logex.LogEx.log_format, refer to those for example.
 
-# Log Format refer to [logrecord-attribute](https://docs.python.org/3/library/logging.html#logrecord-attributes)
+For more on log formats refer to [logrecord-attribute](https://docs.python.org/3/library/logging.html#logrecord-attributes)
 
 Set log_format property before init_app
 
+```
 log_format = """%(asctime)s %(levelname)s: %(message)s
                 [in %(pathname)s:%(lineno)d]"""
 logex.log_format = log_format
+```
 
-# Log handlers
-Set loggers property in logex before init_app
+#### Handlers
+Set loggers property in logex before init_app.
+Using dict with key as the file name and the value as the logger retrieved from logging.getLogger().
+Log files are created and loggers are added to the application.
 
-Using dict with key as the file name and the value as the logger retrieved from logging.getLogger(). Log files are created and loggers are added to the application.
-
-loggers = {'application': 'application',
+```
+loggers = {'application': '__name__',
            'dynamo': 'boto',
            'sql': 'sqlalchemy'}
 logex.loggers = loggers
 
 ```
 
-Exceptions
-```
-
-class SomeException(HTTPException):
-    pass
-
-logex.add_exception(e)
-
+#### Exceptions
 AppException has been defined in flask_logex.exceptions and is handled for
 in the default exception handler. Feel free to build upon and use those as a templates.
+
+The example uses 422 as the default application error code. Than the application error
+is further defined in under the `error` key. `flask_logex.exceptions.handle_error`
+formats the HTTP responses based on whether the exception contains certain properties
+specific to application errors.
+
 ```
+class SomeException(AppException):
+    error_type = 'some_exception'
+    error_message = 'some_message'
 
-## Documentation
+cutom = [SomeException]
 
-This is all I got so far!
-
-## Roadmap
-
-Coming soon...
+logex.init_app(app, api, custom)
+```
 
 ## Contributing
 
-Coming soon...
+Welcome all pull requests possible.
 

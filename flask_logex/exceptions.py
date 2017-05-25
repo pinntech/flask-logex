@@ -50,14 +50,12 @@ def handle_error(e):
     message = str(e)
     error_id = uuid4()
     error_type = None
-    error = {"error_id": str(error_id)}
+    error = {"id": str(error_id)}
 
     # HTTP
     if isinstance(e, HTTPException):
         code = e.code
-        message = e.description
-        if hasattr(e, "data") and "message" in e.data:
-            message = str(e.data["message"])
+        message = e.error_message if hasattr(e, "error_message") else e.description
         if code >= 500 or code == 422:
             log_exception("application", error_id, message)
 
@@ -69,15 +67,12 @@ def handle_error(e):
 
     # Custom
     error_type = e.error_type if hasattr(e, "error_type") else LOGEX_ERROR_MAP[code]
-    error_message = e.error_message if hasattr(e, "error_message") else message
 
     # Error
     error["type"] = error_type
-    error['message'] = error_message
+    error['message'] = message
 
-    return jsonify(message=message,
-                   code=code,
-                   error=error), code
+    return jsonify(error=error), code
 
 
 class AppException(HTTPException):
