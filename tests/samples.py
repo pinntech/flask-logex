@@ -1,3 +1,4 @@
+from boto.exception import JSONResponseError, DynamoDBResponseError
 from flask import Flask
 from flask_logex import LogEx
 from flask_logex.exceptions import AppException
@@ -15,20 +16,25 @@ class SampleException(AppException):
     error_message = _error_message
 
 
-custom = [SampleException]
+custom = [SampleException, JSONResponseError]
 app = Flask(__name__)
 api = Api(app)
 logex = LogEx(app, api, custom)
 
 
-@app.route('/app/sample_exception')
-def sample_exception():
+@app.route('/app/sample')
+def sample():
     raise SampleException('Route Test Error')
 
 
-@app.route('/app/bad_request')
+@app.route('/app/default')
 def bad_request():
     raise BadRequest('Route Test Error')
+
+
+@app.route('/app/boto')
+def boto():
+    raise DynamoDBResponseError(400, reason="Boto", body={"message": "message"})
 
 
 class SampleExc(Resource):
@@ -41,5 +47,11 @@ class BadRequestExc(Resource):
         raise BadRequest('Resource Test Error')
 
 
-api.add_resource(BadRequestExc, '/api/bad_request')
-api.add_resource(SampleExc, '/api/sample_exception')
+class BotoExc(Resource):
+    def get(self):
+        raise DynamoDBResponseError(400, reason="Boto", body={"message": "message"})
+
+
+api.add_resource(BadRequestExc, '/api/default')
+api.add_resource(SampleExc, '/api/sample')
+api.add_resource(BotoExc, '/api/boto')

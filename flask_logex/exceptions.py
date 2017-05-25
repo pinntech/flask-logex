@@ -64,7 +64,7 @@ def handle_error(e):
     # DynamoDB
     if isinstance(e, boto.exception.JSONResponseError):
         code = 400
-        message = str(e.message)
+        message = str(e.reason)
         log_exception("boto", error_id, message)
 
     # Custom

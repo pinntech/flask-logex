@@ -81,22 +81,24 @@ class LogExTest(TestCase):
         self.assertEqual(test_error.error_type, _error_type)
         self.assertEqual(test_error.error_message, _error_message)
 
-    def test_resource_default_exception(self):
-        resp = self.test_client.get('/app/bad_request')
-        data = json.loads(resp.data)
-        self.assertEqual(data["code"], 400)
-        self.assertIsNotNone(data, "error")
-        resp = self.test_client.get('/api/bad_request')
-        data = json.loads(resp.data)
-        self.assertEqual(data["code"], 400)
-        self.assertIsNotNone(data, "error")
+    def test_resource_default(self):
+        self.resource_check("/app/default", 400)
+        self.resource_check("/api/default", 400)
 
-    def test_resource_sample_error(self):
-        resp = self.test_client.get('/app/sample_exception')
+    def test_resource_sample(self):
+        self.resource_check("/app/sample", 422)
+        self.resource_check("/api/sample", 422)
+
+    def test_resource_boto(self):
+        self.resource_check("/app/boto", 400)
+        self.resource_check("/api/boto", 400)
+
+    def resource_check(self, resource, code, fail=False):
+        resp = self.test_client.get(resource)
         data = json.loads(resp.data)
-        self.assertEqual(data["code"], 422)
+        self.assertEqual(data["code"], code)
         self.assertIsNotNone(data, "error")
-        resp = self.test_client.get('/api/sample_exception')
-        data = json.loads(resp.data)
-        self.assertEqual(data["code"], 422)
-        self.assertIsNotNone(data, "error")
+        self.assertIsNotNone(data, "message")
+        self.assertIsNotNone(data["error"], "message")
+        if fail:
+            self.assertEqual(2, 1)
