@@ -1,7 +1,7 @@
 # flask-logex
 Flask Logging and Error Exception Extension
 
-LogEx combines makes error handling, exception catching, and logging
+LogEx makes error handling, exception catching, and logging
 accessible and customizable. This package allows for trace id within
 logs easy to follow and diagnose issues with application. Integrate
 a Flask application utilizing Flask-RESTful seamlessly!
@@ -28,6 +28,9 @@ Access loggers with LogEx().`logger`
 UUID error_id for log traceback.
 
 Custom log formatting and log handlers
+
+Application Errors checking for `error_type` and `error_message`. Sample
+is flask_logex.exceptions.AppException
 ```
 ## Installation
 
@@ -82,7 +85,7 @@ class SomeException(HTTPException):
 
 logex.add_exception(e)
 
-ApplicationError has been defined in flask_logex.exceptions and is handled for
+AppException has been defined in flask_logex.exceptions and is handled for
 in the default exception handler. Feel free to build upon and use those as a templates.
 ```
 

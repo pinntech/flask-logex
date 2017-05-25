@@ -4,49 +4,14 @@ import json
 import logging
 import os
 import subprocess
-from flask import Flask
-from flask_logex import LogEx
-from flask_logex.exceptions import AppException
-from flask_restful import Api, Resource
 from unittest import TestCase
 from werkzeug.exceptions import HTTPException
 
-
-# Samples
-# ~~~~~~~
-
-app = Flask(__name__)
-api = Api(app)
-logex = LogEx(app, api)
-_description = "description"
-_error_code = 422
-_error_type = "test_error"
-_error_message = "test_message"
-
-
-class SampleError(AppException):
-    error_type = _error_type
-    error_message = _error_message
-
-
-logex.add_exception(SampleError)
-
-
-@app.route('/app/test_error')
-def app_route():
-    raise SampleError('Route Test Error')
-
-
-class ApiResource(Resource):
-    def get(self):
-        raise SampleError('Resource Test Error')
-
-
-api.add_resource(ApiResource, '/api/test_error')
-
-
-# Test Case
-# ~~~~~~~~~
+from samples import app, api, logex
+from samples import _description
+from samples import _error_message
+from samples import _error_type
+from samples import SampleException
 
 
 class LogExTest(TestCase):
@@ -94,22 +59,29 @@ class LogExTest(TestCase):
             logger = logs[log]
             self.assertEqual(logger, logging.getLogger(loggers[log]))
 
-    def test_application_error(self):
-        ae = SampleError(_description)
-        self.assertIsInstance(ae, HTTPException)
-        self.assertEqual(ae.description, _description)
-
     def test_error(self):
-        test_error = SampleError(_description)
+        test_error = SampleException(_description)
         self.assertIsInstance(test_error, HTTPException)
         self.assertEqual(test_error.description, _description)
         self.assertEqual(test_error.error_type, _error_type)
         self.assertEqual(test_error.error_message, _error_message)
 
-    def test_handle_error(self):
-        resp = self.test_client.get('/app/test_error')
+    def test_resource_default_exception(self):
+        resp = self.test_client.get('/app/bad_request')
         data = json.loads(resp.data)
-        self.assertEqual(data["code"], _error_code)
-        resp = self.test_client.get('/api/test_error')
+        self.assertEqual(data["code"], 400)
+        self.assertIsNotNone(data, "error")
+        resp = self.test_client.get('/api/bad_request')
         data = json.loads(resp.data)
-        self.assertEqual(data["code"], _error_code)
+        self.assertEqual(data["code"], 400)
+        self.assertIsNotNone(data, "error")
+
+    def test_resource_sample_error(self):
+        resp = self.test_client.get('/app/sample_exception')
+        data = json.loads(resp.data)
+        self.assertEqual(data["code"], 422)
+        self.assertIsNotNone(data, "error")
+        resp = self.test_client.get('/api/sample_exception')
+        data = json.loads(resp.data)
+        self.assertEqual(data["code"], 422)
+        self.assertIsNotNone(data, "error")
