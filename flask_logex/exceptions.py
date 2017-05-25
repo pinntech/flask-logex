@@ -56,12 +56,14 @@ def handle_error(e):
     if isinstance(e, HTTPException):
         code = e.code
         message = e.error_message if hasattr(e, "error_message") else e.description
+        if hasattr(e, "data") and "message" in e.data:
+            message = e.data["message"]
         if code >= 500 or code == 422:
-            log_exception("application", error_id, message)
+            log_exception("__name__", error_id, message)
 
     # DynamoDB
     if isinstance(e, boto.exception.JSONResponseError):
-        code = 400
+        code = 500
         message = str(e.reason)
         log_exception("boto", error_id, message)
 
