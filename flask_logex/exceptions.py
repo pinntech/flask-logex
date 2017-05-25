@@ -58,7 +58,8 @@ def handle_error(e):
         message = e.description
         if hasattr(e, "data") and "message" in e.data:
             message = str(e.data["message"])
-        log_exception("application", error_id, message)
+        if code >= 500 or code == 422:
+            log_exception("application", error_id, message)
 
     # DynamoDB
     if isinstance(e, boto.exception.JSONResponseError):
