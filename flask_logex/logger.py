@@ -11,6 +11,7 @@ that is passed.
 import logging
 import os
 import sys
+from flask import current_app as app
 from flask import request
 
 
@@ -27,8 +28,16 @@ log_format = """
 [message]        %(message)s"""
 
 
-def log_exception(logger, error_id, message):
+def get_logger(log_name):
+    if log_name is "application":
+        return app.logger
+    else:
+        return logging.getLogger(log_name)
+
+
+def log_exception(log_name, error_id, message):
     """Override."""
+    logger = get_logger(log_name)
     exc_info = sys.exc_info()
     if exc_info[1] is None:
         exc_info = message

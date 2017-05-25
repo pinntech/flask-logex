@@ -1,12 +1,12 @@
 """Test Logex Initization and Error Handling"""
 
 import json
-import logging
 import os
 import subprocess
 from unittest import TestCase
 from werkzeug.exceptions import HTTPException
 
+from flask_logex.logger import log_exception, get_logger
 from samples import app, api, logex
 from samples import _description
 from samples import _error_message
@@ -38,8 +38,15 @@ class LogExTest(TestCase):
         cls.logex = logex
 
     @classmethod
-    def tearDown(cls):
+    def tearDownClass(cls):
         subprocess.call(['rm', '-rf', 'logs'])
+
+    def setUp(self):
+        with self.ac:
+            self.logs = self.logex.logs
+
+    def tearDown(self):
+        pass
 
     def test_settings(self):
         self.assertEqual(self.app.config['LOG_PATH'], './logs/')
@@ -47,8 +54,6 @@ class LogExTest(TestCase):
         self.assertEqual(self.app.config['LOG_LIST'], self.logex.loggers.keys())
 
     def test_logs(self):
-        with self.ac:
-            logs = self.logex.logs
         log_list = self.app.config['LOG_LIST']
         log_path = self.app.config['LOG_PATH']
         loggers = self.logex.loggers
@@ -56,8 +61,18 @@ class LogExTest(TestCase):
         for log in log_list:
             path = log_path + log + '.log'
             self.assertTrue(os.path.isfile(path))
-            logger = logs[log]
-            self.assertEqual(logger, logging.getLogger(loggers[log]))
+            logger = self.logs[log]
+            self.assertEqual(logger, get_logger(loggers[log]))
+
+    def test_logging(self):
+        application_log = "./logs/application.log"
+        dynamo_log = "./logs/dynamo.log"
+        self.assertTrue(os.stat(application_log).st_size == 0)
+        self.assertTrue(os.stat(dynamo_log).st_size == 0)
+        log_exception("application", "application_id", "application")
+        log_exception("boto", "boto_id", "boto")
+        self.assertTrue(os.stat(application_log).st_size >= 0)
+        self.assertTrue(os.stat(dynamo_log).st_size >= 0)
 
     def test_error(self):
         test_error = SampleException(_description)

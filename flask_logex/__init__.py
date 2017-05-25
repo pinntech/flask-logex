@@ -10,7 +10,7 @@ import os
 from exceptions import configure_exceptions
 from exceptions import *  # NOQA
 from flask import _app_ctx_stack as stack
-from logger import configure_logging, log_format
+from logger import configure_logging, get_logger, log_format
 from subprocess import call
 
 
@@ -74,17 +74,12 @@ class LogEx():
 
     def add_logger(self, logger, log_path):
         """Add logger from logging.getLogger."""
-        if logger is "application":
-            _logger = self.app.logger
-        else:
-            _logger = logging.getLogger(logger)
         level = self.levels[self.app.logger.level]
-        _logger.setLevel(level)
+        logger.setLevel(level)
         log_file_handler = logging.FileHandler(log_path)
         log_file_handler.setLevel(level)
         log_file_handler.setFormatter(logging.Formatter(self.log_format))
-        _logger.addHandler(log_file_handler)
-        return _logger
+        logger.addHandler(log_file_handler)
 
     @property
     def logs(self):
@@ -104,6 +99,7 @@ class LogEx():
                     path = log_path + log + '.log'
                     if not os.path.isfile(path):
                         call(['touch', path])
-                    logger = self.add_logger(self.loggers[log], path)
+                    logger = get_logger(self.loggers[log])
+                    self.add_logger(logger, path)
                     ctx.logs[log] = logger
             return ctx.logs
