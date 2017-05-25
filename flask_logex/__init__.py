@@ -12,7 +12,6 @@ from exceptions import configure_exceptions
 from flask import _app_ctx_stack as stack
 from logger import configure_logging, log_format
 from subprocess import call
-from werkzeug.exceptions import *  # NOQA
 
 
 class LogEx():

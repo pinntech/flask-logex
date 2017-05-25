@@ -12,6 +12,7 @@ from uuid import uuid4
 from logger import log_exception
 from werkzeug.exceptions import HTTPException
 from werkzeug.exceptions import default_exceptions
+from werkzeug.exceptions import *  # NOQA
 
 
 def configure_exceptions(app, api=None):
