@@ -9,7 +9,6 @@ import logging
 import os
 from exceptions import configure_exceptions
 from exceptions import *  # NOQA
-from flask import _app_ctx_stack as stack
 from logger import configure_logging, get_logger, log_format
 from subprocess import call
 
@@ -62,10 +61,10 @@ class LogEx():
         self.app = app
         self.api = api
         self.custom = custom
+        self.init_settings()
         configure_logging(app)
         configure_exceptions(app, api, custom)
-        self.init_settings()
-        self._logs = self.logs
+        self.logs = self.init_logs()
 
     def init_settings(self):
         """Initialize settings from environment variables."""
@@ -82,25 +81,21 @@ class LogEx():
         log_file_handler.setFormatter(logging.Formatter(self.log_format))
         logger.addHandler(log_file_handler)
 
-    @property
-    def logs(self):
+    def init_logs(self):
         """Log files property."""
         if self.app is None:
             raise AttributeError("Logex is not initialized, run init_app")
-        ctx = stack.top
-        if ctx is not None:
-            if not hasattr(ctx, 'logs'):
-                ctx.logs = {}
-                log_path = self.app.config['LOG_PATH']
-                log_list = self.app.config['LOG_LIST']
-                if not os.path.isdir(log_path):
-                    call(['mkdir', '-p', log_path])
+        logs = {}
+        log_path = self.app.config['LOG_PATH']
+        log_list = self.app.config['LOG_LIST']
+        if not os.path.isdir(log_path):
+            call(['mkdir', '-p', log_path])
 
-                for log in log_list:
-                    path = log_path + log + '.log'
-                    if not os.path.isfile(path):
-                        call(['touch', path])
-                    logger = get_logger(self.loggers[log])
-                    self.add_logger(logger, path)
-                    ctx.logs[log] = logger
-            return ctx.logs
+        for log in log_list:
+            path = log_path + log + '.log'
+            if not os.path.isfile(path):
+                call(['touch', path])
+            logger = get_logger(self.loggers[log])
+            self.add_logger(logger, path)
+            logs[log] = logger
+        return logs
