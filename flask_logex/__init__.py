@@ -65,6 +65,7 @@ class LogEx():
         configure_logging(app)
         configure_exceptions(app, api, custom)
         self.init_settings()
+        self._logs = self.logs
 
     def init_settings(self):
         """Initialize settings from environment variables."""
