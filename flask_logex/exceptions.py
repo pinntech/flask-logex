@@ -59,7 +59,7 @@ def handle_error(e):
         message = e.error_message if hasattr(e, "error_message") else e.description
         # Reqparse error handling
         if hasattr(e, "data") and "message" in e.data:
-            message = e.data["message"].values[0]
+            message = e.data["message"].values()[0]
             param = e.data["message"].keys()[0]
         if code >= 500 or code == 422:
             log_exception("__name__", error_id, message)
