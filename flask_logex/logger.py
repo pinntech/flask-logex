@@ -28,10 +28,7 @@ log_format = """
 
 
 def get_logger(log_name):
-    if log_name is "application":
-        return logging.getLogger(__name__)
-    else:
-        return logging.getLogger(log_name)
+    return logging.getLogger(log_name)
 
 
 def log_exception(log_name, error_id, message):

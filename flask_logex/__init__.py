@@ -17,7 +17,7 @@ class LogEx():
     """LogEx Extension Class."""
 
     log_format = log_format
-    loggers = {'application': 'application',
+    loggers = {'application': '__name__',
                'dynamo': 'boto'}
     levels = {50: logging.CRITICAL,
               40: logging.ERROR,
