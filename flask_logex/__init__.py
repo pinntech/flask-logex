@@ -7,7 +7,6 @@ Contains configuration options for local, development, staging and production.
 
 import logging
 import os
-from exceptions import add_exception
 from exceptions import configure_exceptions
 from exceptions import *  # NOQA
 from flask import _app_ctx_stack as stack
@@ -28,7 +27,7 @@ class LogEx():
               10: logging.DEBUG,
               0: logging.NOTSET}
 
-    def __init__(self, app=None, api=None):
+    def __init__(self, app=None, api=None, custom=[]):
         """
         Initialize LogEx Instance.
 
@@ -38,13 +37,16 @@ class LogEx():
             Optional Flask application.
         api : flask_restful.Api
             Optional Flask-RESTful Api.
+        custom : list
+            Optional list of custom exceptions specific to application.
         """
         self.app = app
         self.api = api
+        self.custom = custom
         if self.app is not None:
-            self.init_app(app, api)
+            self.init_app(app, api, custom)
 
-    def init_app(self, app, api=None):
+    def init_app(self, app, api=None, custom=[]):
         """
         Initialize LogEx Instance.
 
@@ -54,11 +56,14 @@ class LogEx():
             Flask application.
         api : flask_restful.Api
             Optional Flask-RESTful Api.
+        custom : list
+            Optional list of custom exceptions specific to application.
         """
         self.app = app
         self.api = api
+        self.custom = custom
         configure_logging(app)
-        configure_exceptions(app, api)
+        configure_exceptions(app, api, custom)
         self.init_settings()
 
     def init_settings(self):
@@ -77,10 +82,6 @@ class LogEx():
         log_file_handler.setFormatter(logging.Formatter(self.log_format))
         _logger.addHandler(log_file_handler)
         return _logger
-
-    def add_exception(self, e):
-        """Add werkzeug.exceptions.HTTPException subclass to handlers."""
-        add_exception(self.app, e)
 
     @property
     def logs(self):

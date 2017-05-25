@@ -4,9 +4,6 @@ from flask_logex.exceptions import AppException
 from flask_restful import Api, Resource
 from werkzeug.exceptions import BadRequest
 
-app = Flask(__name__)
-api = Api(app)
-logex = LogEx(app, api)
 _description = "description"
 _error_code = 422
 _error_type = "test_error"
@@ -18,7 +15,10 @@ class SampleException(AppException):
     error_message = _error_message
 
 
-logex.add_exception(SampleException)
+custom = [SampleException]
+app = Flask(__name__)
+api = Api(app)
+logex = LogEx(app, api, custom)
 
 
 @app.route('/app/sample_exception')
