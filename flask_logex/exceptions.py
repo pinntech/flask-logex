@@ -50,14 +50,17 @@ def handle_error(e):
     message = str(e)
     error_id = uuid4()
     error_type = None
+    param = None
     error = {"id": str(error_id)}
 
     # HTTP
     if isinstance(e, HTTPException):
         code = e.code
         message = e.error_message if hasattr(e, "error_message") else e.description
+        # Reqparse error handling
         if hasattr(e, "data") and "message" in e.data:
-            message = e.data["message"]
+            message = e.data["message"].values[0]
+            param = e.data["message"].keys()[0]
         if code >= 500 or code == 422:
             log_exception("__name__", error_id, message)
 
@@ -73,6 +76,8 @@ def handle_error(e):
     # Error
     error["type"] = error_type
     error['message'] = message
+    if param:
+        error["param"] = param
 
     return jsonify(error=error), code
 

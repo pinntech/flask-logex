@@ -33,7 +33,7 @@ Access loggers with LogEx().`logger` for custom logging throughout application.
 UUID error_id for log traceback, generated at request time.
 
 Custom log formatting, handlers, and exceptions to generate logging.
-See `flask_logex.exceptions.handle_error`
+See `flask_logex.exceptions.handle_error`.
 
 Application Errors checking for `error_type` and `error_message`.
 Sample is `flask_logex.exceptions.AppException`
