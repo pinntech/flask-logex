@@ -6,6 +6,7 @@ import os
 import subprocess
 from flask import Flask
 from flask_logex import LogEx
+from flask_logex.exceptions import AppException
 from flask_restful import Api, Resource
 from unittest import TestCase
 from werkzeug.exceptions import HTTPException
@@ -23,8 +24,7 @@ _error_type = "test_error"
 _error_message = "test_message"
 
 
-class SampleError(HTTPException):
-    code = _error_code
+class SampleError(AppException):
     error_type = _error_type
     error_message = _error_message
 

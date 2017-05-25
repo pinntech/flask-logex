@@ -78,3 +78,18 @@ def handle_error(e):
     return jsonify(message=message,
                    code=code,
                    error=error), code
+
+
+class AppException(HTTPException):
+    """App exception with custom error type and messages."""
+
+    code = 422
+    error_type = None
+    error_message = None
+
+    def __init__(self, description=None, response=None):
+        if self.error_type is None:
+            assert AttributeError("error_type must be set")
+        if self.error_message is None:
+            assert AttributeError("error_message must be set")
+        HTTPException.__init__(self, description, response)
