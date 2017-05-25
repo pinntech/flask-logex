@@ -66,13 +66,9 @@ class LogExTest(TestCase):
 
     def test_logging(self):
         application_log = "./logs/application.log"
-        dynamo_log = "./logs/dynamo.log"
         self.assertTrue(os.stat(application_log).st_size == 0)
-        self.assertTrue(os.stat(dynamo_log).st_size == 0)
         log_exception("application", "application_id", "application")
-        log_exception("boto", "boto_id", "boto")
         self.assertTrue(os.stat(application_log).st_size >= 0)
-        self.assertTrue(os.stat(dynamo_log).st_size >= 0)
 
     def test_error(self):
         test_error = SampleException(_description)
@@ -88,10 +84,6 @@ class LogExTest(TestCase):
     def test_resource_sample(self):
         self.resource_check("/app/sample", 422)
         self.resource_check("/api/sample", 422)
-
-    def test_resource_boto(self):
-        self.resource_check("/app/boto", 400)
-        self.resource_check("/api/boto", 400)
 
     def resource_check(self, resource, code, fail=False):
         resp = self.test_client.get(resource)

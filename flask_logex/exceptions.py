@@ -5,7 +5,6 @@ Define all possible request exceptions of the API.
 :license: All rights reserved
 """
 
-import boto
 from flask import jsonify
 from uuid import uuid4
 from logger import log_exception
@@ -63,12 +62,6 @@ def handle_error(e):
             param = e.data["message"].keys()[0]
         if code >= 500 or code == 422:
             log_exception("__name__", error_id, message)
-
-    # DynamoDB
-    if isinstance(e, boto.exception.JSONResponseError):
-        code = 500
-        message = str(e.reason)
-        log_exception("boto", error_id, message)
 
     # Custom
     error_type = e.error_type if hasattr(e, "error_type") else LOGEX_ERROR_MAP[code]

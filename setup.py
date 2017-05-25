@@ -1,40 +1,43 @@
-#!/usr/bin/env python
+import re
+import codecs
+from setuptools import setup, find_packages
 
-from distutils.core import setup
+#with codecs.open('README.rst', 'r', 'utf-8') as f:
+#    split = re.split('(Table of Contents)', f.read())
+#    readme = split[1] + split[2]
 
-with open("requirements.txt") as f:
-    required = f.read().splitlines()
+requirements = [
+    'Flask>=0.12.1',
+    'Flask-RESTful==0.3.5',
+    'pytest>=2.9.2',
+    'werkzeug==0.11.10',
+]
 
-VERSION = '0.0.1'
-
-setup(name='Flask-LogEx',
-      version=VERSION,
-      description='Flask Logging and Error Handling Extension.',
-      author='Tim Co',
-      author_email='tim@pinn.ai',
-      url='https://github.com/tcco/flask-logex',
-      packages=['flask_logex'],
-      install_requires=required,
-
-      # Packaging options:
-      zip_safe=False,
-      include_package_data=True,
-
-      # Classifiers:
-      platforms='any',
-      classifiers=[
-        'Environment :: Web Environment',
+setup(
+    name='Flask-LogEx',
+    version='0.1.0',
+    url='https://github.com/pinntech/flask-logex',
+    description='Flask Logging and Error Handling Extension.',
+    long_description='',
+    author='Tim Co <tim@pinn.ai>',
+    license='MIT',
+    keywords='flask logging exceptions handling errors traceback',
+    packages=find_packages(exclude=('tests', 'tests.*')),
+    include_package_data=True,
+    entry_points={
+    },
+    classifiers=[
         'Intended Audience :: Developers',
-        'License :: Public Domain',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
-        'Topic :: Software Development :: Libraries :: Python Modules',
-        'Topic :: Database',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: Implementation :: PyPy',
-        ],
-
-      )
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+    ],
+    install_requires=requirements,
+)

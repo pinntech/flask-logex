@@ -17,8 +17,7 @@ class LogEx():
     """LogEx Extension Class."""
 
     log_format = log_format
-    loggers = {'application': '__name__',
-               'dynamo': 'boto'}
+    loggers = {'application': '__name__'}
     levels = {50: logging.CRITICAL,
               40: logging.ERROR,
               30: logging.WARNING,
@@ -68,7 +67,7 @@ class LogEx():
 
     def init_settings(self):
         """Initialize settings from environment variables."""
-        self.LOG_PATH = os.environ.get("LOG_PATH", "./logs")
+        self.LOG_PATH = os.environ.get("LOG_PATH", "./logs/")
         self.LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
         self.LOG_LIST = self.loggers.keys()
 
