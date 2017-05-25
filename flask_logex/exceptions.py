@@ -67,9 +67,11 @@ def handle_error(e):
         message = str(e.message)
         log_exception(logging.getLogger("boto"), error_id, message)
 
+    # Custom
     error_type = e.error_type if hasattr(e, "error_type") else LOGEX_ERROR_MAP[code]
     error_message = e.error_message if hasattr(e, "error_message") else message
 
+    # Error
     error["type"] = error_type
     error['message'] = error_message
 

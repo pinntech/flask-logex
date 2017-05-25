@@ -74,7 +74,10 @@ class LogEx():
 
     def add_logger(self, logger, log_path):
         """Add logger from logging.getLogger."""
-        _logger = logging.getLogger(logger)
+        if logger is "application":
+            _logger = self.app.logger
+        else:
+            _logger = logging.getLogger(logger)
         level = self.levels[self.app.logger.level]
         _logger.setLevel(level)
         log_file_handler = logging.FileHandler(log_path)
