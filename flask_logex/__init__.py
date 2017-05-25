@@ -9,6 +9,7 @@ import logging
 import os
 from exceptions import add_exception
 from exceptions import configure_exceptions
+from exceptions import *  # NOQA
 from flask import _app_ctx_stack as stack
 from logger import configure_logging, log_format
 from subprocess import call
