@@ -15,10 +15,12 @@ class SampleException(AppException):
     error_message = _error_message
 
 
-custom = [SampleException]
+errors = [SampleException]
+logex = LogEx(errors=errors)
+
 app = Flask(__name__)
 api = Api(app)
-logex = LogEx(app, api, custom)
+logex.init_app(app, api)
 
 
 @app.route('/app/sample')

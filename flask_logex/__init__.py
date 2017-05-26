@@ -54,14 +54,9 @@ class LogEx():
         self.log_format = log_format
         self.log_map = log_map
         if self.app is not None:
-            self.init_app(app, api, errors)
+            self.init_app(app, api)
 
-    def init_app(self,
-                 app,
-                 api=None,
-                 errors=None,
-                 log_format=None,
-                 log_map=None):
+    def init_app(self, app, api=None):
         """
         Initialize LogEx Instance.
 
@@ -71,19 +66,9 @@ class LogEx():
             Flask application.
         api : flask_restful.Api
             Optional Flask-RESTful Api.
-        custom : list
-            Optional list of custom exceptions specific to application.
-        log_format : logging.Formatter
-            Optional logging format, defaulted is in flask_logex.logger
-        log_map : dict
-            Optional logging map, maps log files to logging.Logger
         """
         self.app = app
         self.api = api
-        self.errors = errors
-        self.logs = {}
-        self.log_format = log_format
-        self.log_map = log_map
 
         if self.errors is None:
             self.errors = []
@@ -92,6 +77,7 @@ class LogEx():
         if self.log_map is None:
             self.log_map = {'application': '__name__'}
 
+        self.logs = {}
         self.init_settings()
         self.init_logs()
         self.configure_logging()
