@@ -51,18 +51,19 @@ class LogExTest(TestCase):
     def test_settings(self):
         self.assertEqual(self.logex.LOG_PATH, "./logs/")
         self.assertEqual(self.logex.LOG_LEVEL, "INFO")
-        self.assertEqual(self.logex.LOG_LIST, self.logex.loggers.keys())
+        self.assertEqual(self.logex.LOG_LIST, self.logex.log_map.keys())
 
     def test_logs(self):
         log_list = self.logex.LOG_LIST
         log_path = self.logex.LOG_PATH
-        loggers = self.logex.loggers
+        log_map = self.logex.log_map
         self.assertTrue(os.path.isdir(log_path))
         for log in log_list:
             path = log_path + log + '.log'
             self.assertTrue(os.path.isfile(path))
             logger = self.logs[log]
-            self.assertEqual(logger, get_logger(loggers[log]))
+            _logger = get_logger(log_map[log])
+            self.assertEqual(logger, _logger)
 
     def test_logging(self):
         application_log = "./logs/application.log"

@@ -9,7 +9,6 @@ that is passed.
 """
 
 import logging
-import os
 import sys
 from flask import request
 
@@ -25,6 +24,17 @@ log_format = """
 [function]       %(funcName)s
 [time]           %(asctime)s
 [message]        %(message)s"""
+
+logex_format = logging.Formatter(log_format)
+
+
+def add_logger(logger, log_path, log_level, log_format):
+    """Add logger from logging.getLogger."""
+    logger.setLevel(log_level)
+    log_file_handler = logging.FileHandler(log_path)
+    log_file_handler.setLevel(log_level)
+    log_file_handler.setFormatter(log_format)
+    logger.addHandler(log_file_handler)
 
 
 def get_logger(log_name):
@@ -54,26 +64,3 @@ def log_exception(log_name, error_id, message):
            ),
         exc_info=exc_info,
         extra={"error_id": error_id})
-
-
-def configure_logging(application):
-    """
-    Configure logging on the flask application.
-
-    Parameters
-    ----------
-    application : flask.Flask
-        The Flask application instance.
-    """
-    # Log format
-    application.debug_log_format = log_format
-    # Environment determines log level
-    environment = os.environ.get('ENVIRONMENT', 'local')
-    if environment == 'local':
-        LOG_LEVEL = logging.INFO
-    elif environment == 'development':
-        LOG_LEVEL = logging.WARNING
-    else:
-        LOG_LEVEL = logging.ERROR
-    # Set application log level
-    application.logger.setLevel(LOG_LEVEL)
