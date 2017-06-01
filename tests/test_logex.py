@@ -68,7 +68,7 @@ class LogExTest(TestCase):
     def test_logging(self):
         application_log = "./logs/application.log"
         self.assertTrue(os.stat(application_log).st_size == 0)
-        log_exception("application", "application_id", "application")
+        log_exception("__name__", "application_id", "application")
         self.assertTrue(os.stat(application_log).st_size >= 0)
 
     def test_error(self):
@@ -86,7 +86,7 @@ class LogExTest(TestCase):
         self.resource_check("/app/sample", 422)
         self.resource_check("/api/sample", 422)
 
-    def resource_check(self, resource, code, fail=False):
+    def resource_check(self, resource, code):
         resp = self.test_client.get(resource)
         self.assertEqual(resp.status_code, code)
         data = json.loads(resp.data)
@@ -94,6 +94,4 @@ class LogExTest(TestCase):
         self.assertIsNotNone(data["error"], "message")
         self.assertIsNotNone(data["error"], "type")
         self.assertIsNotNone(data["error"], "id")
-        if fail:
-            print data
-            self.assertEqual(2, 1)
+        print data

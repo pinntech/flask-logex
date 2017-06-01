@@ -5,15 +5,18 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
+import json
 import logging
 import os
+from subprocess import call
+from flask import request
+from werkzeug.exceptions import *  # NOQA
+from werkzeug.exceptions import default_exceptions
 from exceptions import handle_error
 from logger import add_logger
 from logger import get_logger
 from logger import logex_format
-from subprocess import call
-from werkzeug.exceptions import *  # NOQA
-from werkzeug.exceptions import default_exceptions
+from trace import Tracer
 
 
 class LogEx():
@@ -31,7 +34,9 @@ class LogEx():
                  api=None,
                  errors=None,
                  log_format=None,
-                 log_map=None):
+                 log_map=None,
+                 cache=None,
+                 process_response=None):
         """
         Initialize LogEx Instance.
 
@@ -47,12 +52,20 @@ class LogEx():
             Optional logging format, defaulted is in flask_logex.logger
         log_map : dict
             Optional logging map, maps log files to logging.Logger
+        cache : werkzeug.contrib.cache.BaseCache
+            Optional trace cache
+        process_response : function
+            Hook to override Flask process_response, function must take response as a required
+            parameter and trace_id as an optional parameter.
         """
         self.app = app
         self.api = api
         self.errors = errors
         self.log_format = log_format
         self.log_map = log_map
+        self.process_response = process_response
+        if cache:
+            self.tracer = Tracer(cache)
         if self.app is not None:
             self.init_app(app, api)
 
@@ -135,3 +148,15 @@ class LogEx():
         # Flask-RESTful handle_error override
         if self.api:
             self.api.handle_error = handle_error
+        self.app.process_response = self._process_response
+
+    def _process_response(self, response):
+        """Handler for the Flask response hook to add in request/response tracing"""
+        if self.tracer:
+            trace_id = self.tracer.set(request, response)
+            response_data = json.loads(response.data)
+            response_data['error']['id'] = trace_id
+            response.data = json.dumps(response_data)
+        if self.process_response:
+            self.process_response(response, trace_id)
+        return response

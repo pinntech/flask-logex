@@ -7,8 +7,8 @@ Define all possible request exceptions of the API.
 
 from flask import jsonify
 from uuid import uuid4
-from logger import log_exception
 from werkzeug.exceptions import HTTPException
+from logger import log_exception
 
 
 LOGEX_ERROR_MAP = {
@@ -60,6 +60,7 @@ def handle_error(e):
     if param:
         error["param"] = param
 
+    response = jsonify(error=error), code
     return jsonify(error=error), code
 
 

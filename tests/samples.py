@@ -3,6 +3,7 @@ from flask_logex import LogEx
 from flask_logex.exceptions import AppException
 from flask_restful import Api, Resource
 from werkzeug.exceptions import BadRequest
+from werkzeug.contrib.cache import SimpleCache
 
 _description = "description"
 _error_code = 422
@@ -15,13 +16,14 @@ class SampleException(AppException):
     error_message = _error_message
 
 
-errors = [SampleException]
-logex = LogEx(errors=errors)
-
 app = Flask(__name__)
 api = Api(app)
-logex.init_app(app, api)
 
+errors = [SampleException]
+# cache = RedisCache()
+cache = SimpleCache()
+logex = LogEx(errors=errors, cache=cache)
+logex.init_app(app, api)
 
 @app.route('/app/sample')
 def sample():
