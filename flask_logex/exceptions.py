@@ -5,8 +5,6 @@ Define all possible request exceptions of the API.
 :license: All rights reserved
 """
 
-from flask import jsonify
-from uuid import uuid4
 from logger import log_exception
 from werkzeug.exceptions import HTTPException
 
@@ -35,7 +33,7 @@ def handle_error(e):
     """
     code = 500
     message = str(e)
-    error_id = uuid4()
+    error_id = 69
     error_type = None
     param = None
     error = {"id": str(error_id)}
@@ -55,12 +53,20 @@ def handle_error(e):
     error_type = e.error_type if hasattr(e, "error_type") else LOGEX_ERROR_MAP[code]
 
     # Error
+    error["code"] = code
     error["type"] = error_type
     error['message'] = message
     if param:
         error["param"] = param
 
-    return jsonify(error=error), code
+    return error
+
+
+def errorhandler(func):
+    def call_error_handler(e, *args, **kwargs):
+        error = handle_error(e)
+        return func(e, error, *args, **kwargs)
+    return call_error_handler
 
 
 class AppException(HTTPException):
