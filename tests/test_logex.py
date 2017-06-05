@@ -69,14 +69,20 @@ class LogExTest(TestCase):
         application_log = "./logs/application.log"
         self.assertTrue(os.stat(application_log).st_size == 0)
         log_exception("__name__", "application_id", "application")
-        self.assertTrue(os.stat(application_log).st_size >= 0)
+        self.assertTrue(os.stat(application_log).st_size > 0)
 
-    def test_error(self):
+    def test_sample_error(self):
         test_error = SampleException(_description)
         self.assertIsInstance(test_error, HTTPException)
         self.assertEqual(test_error.description, _description)
         self.assertEqual(test_error.error_type, _error_type)
         self.assertEqual(test_error.error_message, _error_message)
+
+    def test_resource_custom_error(self):
+        self.assertTrue(os.stat("./logs/test_exception.log").st_size == 0)
+        self.resource_check("/app/custom", 500)
+        self.resource_check("/api/custom", 500)
+        self.assertTrue(os.stat("./logs/test_exception.log").st_size > 0)
 
     def test_resource_default(self):
         self.resource_check("/app/default", 400)
@@ -85,6 +91,7 @@ class LogExTest(TestCase):
     def test_resource_sample(self):
         self.resource_check("/app/sample", 422)
         self.resource_check("/api/sample", 422)
+        self.assertTrue(os.stat("./logs/application.log").st_size > 0)
 
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)

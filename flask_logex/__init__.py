@@ -13,6 +13,7 @@ from flask import request
 from werkzeug.exceptions import *  # NOQA
 from werkzeug.exceptions import default_exceptions
 from exceptions import handle_error
+from flask import jsonify
 from logger import add_logger
 from logger import get_logger
 from logger import logex_format
@@ -32,6 +33,7 @@ class LogEx():
     def __init__(self,
                  app=None,
                  api=None,
+                 handle_error=None,
                  errors=None,
                  log_format=None,
                  log_map=None,
@@ -60,6 +62,7 @@ class LogEx():
         """
         self.app = app
         self.api = api
+        self.handle_error = handle_error
         self.errors = errors
         self.log_format = log_format
         self.log_map = log_map
@@ -83,6 +86,8 @@ class LogEx():
         self.app = app
         self.api = api
 
+        if self.handle_error is None:
+            self.handle_error = handle_error
         if self.errors is None:
             self.errors = []
         if self.log_format is None:
@@ -141,13 +146,13 @@ class LogEx():
             raise AttributeError("Logex is not initialized, run init_app")
         # Default exceptions provided by werkzeug
         for code in default_exceptions:
-            self.app.errorhandler(code)(handle_error)
+            self.app.errorhandler(code)(self.jsonify_error)
         # Custom application errors
         for err in self.errors:
-            self.app.errorhandler(err)(handle_error)
+            self.app.errorhandler(err)(self.jsonify_error)
         # Flask-RESTful handle_error override
         if self.api:
-            self.api.handle_error = handle_error
+            self.api.handle_error = self.jsonify_error
         self.app.process_response = self._process_response
 
     def _process_response(self, response):
@@ -160,3 +165,8 @@ class LogEx():
         if self.process_response:
             self.process_response(response, trace_id)
         return response
+
+    def jsonify_error(self, e):
+        """Separate jsonify and handle_error."""
+        error = self.handle_error(e)
+        return jsonify(error=error), error["code"]
