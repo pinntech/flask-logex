@@ -43,12 +43,13 @@ Features
 
   | Propertey        | Descritpion      |
   | ---------------- | ---------------- |
-  | handle_error     | `INFO`           |
-  | errors           | `WARNING`        |
-  | log_format       | `ERROR`          |
-  | log_map          | `ERROR`          |
-  | cache            | `ERROR`          |
-  | process_response | `ERROR`          |
+  | handle_error     | Custom error handler that are caught by exceptions of Flask and Flask-RESTFul.     |
+  | errors           | Errors that will be caught beyond the default exceptions by Werkzeug.              |
+  | log_format       | Format of logging in log files.                                                    |
+  | log_map          | Dictionary containing the name of log file as key with the logger name as value.   |
+  | cache            | Werkzeug contrib cache object used to store tracer objects.                        |
+  | process_response | Hook into processing the response object and injecting the trace identifier.       |
+  | trace_on         | List of HTTP codes that will be traced and cached for tracing purposes.            |
 
 
 
