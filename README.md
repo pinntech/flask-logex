@@ -1,4 +1,5 @@
-# flask-logex
+flask-logex
+===========
 Flask Logging and Error Exception Extension
 
 LogEx makes error handling, exception catching, and logging
@@ -6,48 +7,62 @@ accessible and customizable. This package allows for trace id within
 logs easy to follow and diagnose issues with application. Integrate
 a Flask application seamlessly! Flask-RESTFul is supported as well.
 
-## Table of Contents
+Table of Contents
+-----------------
 
 * [Features](#features)
 * [Installation](#installation)
 * [Usage](#usage)
-* [Dcoumentation](#documentation)
-* [Roadmap](#roadmap)
 * [Contributing](#contributing)
 
-## Features
-Follows werkzeug.exceptions protocol
+Features
+--------
 
-Dynamic creation of loggers attached to appliations and log files in designated log paths.
-Log levels are maintained by `ENVIRONMENT` variable.
+* Follows werkzeug.exceptions.HTTPException protocol
 
-| Environment    | Level      |
-| -------------- | ---------- |
-| `local`        | `INFO`     |
-| `development`  | `WARNING`  |
-| `staging`      | `ERROR`    |
-| `production`   | `ERROR`    |
+* Dynamic creation of loggers attached to appliations and log files in designated log paths.
 
-Access loggers with LogEx().`logger` for custom logging throughout application.
+* Optionality to use trace or error id for log traceback, generated at request or response.
 
-UUID error_id for log traceback, generated at request time.
+* Custom log formatting, handlers, and exceptions to generate logging.
+  See `flask_logex.exceptions.handle_error`.
 
-Custom log formatting, handlers, and exceptions to generate logging.
-See `flask_logex.exceptions.handle_error`.
+* Application Errors checking for `error_type` and `error_message`.
+  Sample is `flask_logex.exceptions.AppException`
 
-Application Errors checking for `error_type` and `error_message`.
-Sample is `flask_logex.exceptions.AppException`
+* Log levels are maintained by `ENVIRONMENT` variable.
+
+  | Environment    | Level      |
+  | -------------- | ---------- |
+  | `local`        | `INFO`     |
+  | `development`  | `WARNING`  |
+  | `staging`      | `ERROR`    |
+  | `production`   | `ERROR`    |
+ 
+ * LogEx customization properties
+
+  | Propertey        | Descritpion      |
+  | ---------------- | ---------------- |
+  | handle_error     | `INFO`           |
+  | errors           | `WARNING`        |
+  | log_format       | `ERROR`          |
+  | log_map          | `ERROR`          |
+  | cache            | `ERROR`          |
+  | process_response | `ERROR`          |
 
 
-## Installation
+
+Installation
+------------
 
 1. Clone the repository `git clone https://github.com/tcco/flask-logex.git`
-2. Assure `click` is pip installed and `cd flask-logex`
-3. Run `./manage install`
-4. Initialize virtualenv with `. .venv/bin/activate`
-5. To make sure the install worked properly run `./manage unit_tests`
+2. Enter `cd flask-logex`
+3. To develop `python setup.py develop`
+4. To install `python setup.py install`
+5. To test `pytest -s tests`
 
-## Usage
+Usage
+-----
 
 ### Initialization
 ```
@@ -62,35 +77,27 @@ api = Api(app)
 logex.init_app(app, api)
 ```
 
-### Customization
-
-#### Formatting
-Defaults are set in flask_logex.Logex.loggers and flask_logex.LogEx.log_format, refer to those for example.
-
-For more on log formats refer to [logrecord-attribute](https://docs.python.org/3/library/logging.html#logrecord-attributes)
-
-Set log_format property before init_app
+### Formatting
+Defaults are set in flask_logex.LogEx.log_format, refer to for example. For more on log formats refer to [logrecord-attribute](https://docs.python.org/3/library/logging.html#logrecord-attributes)
 
 ```
-log_format = """%(asctime)s %(levelname)s: %(message)s
-                [in %(pathname)s:%(lineno)d]"""
-logex.log_format = log_format
+log_format = """%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"""
+logex = Logex(log_format=log_format)
 ```
 
-#### Handlers
+### Handlers
 Set loggers property in logex before init_app.
 Using dict with key as the file name and the value as the logger retrieved from logging.getLogger().
 Log files are created and loggers are added to the application.
 
 ```
-loggers = {'application': '__name__',
+log_map = {'application': '__name__',
            'dynamo': 'boto',
            'sql': 'sqlalchemy'}
-logex.loggers = loggers
-
+logex = Logex(log_map=log_map)
 ```
 
-#### Exceptions
+### Exceptions
 AppException has been defined in flask_logex.exceptions and is handled for
 in the default exception handler. Feel free to build upon and use those as a templates.
 
@@ -104,12 +111,12 @@ class SomeException(AppException):
     error_type = 'some_exception'
     error_message = 'some_message'
 
-custom = [SomeException]
-
-logex.init_app(app, api, custom)
+errors = [SomeException]
+logex = Logex(errors=errors)
 ```
 
-## Contributing
+Contributing
+------------
 
 Want to contribute? Here's how you can help...
 
@@ -120,8 +127,8 @@ Want to contribute? Here's how you can help...
 5. Push to the branch: git push origin my-new-feature
 6. Submit a pull request
 
-## License
-----------
+License
+-------
 
 The MIT License (MIT)
 
