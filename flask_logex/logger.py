@@ -17,7 +17,6 @@ from flask import request
 log_format = """
 -------------------------------------------------------------------------------
 
-[trace_id]       %(trace_id)s
 [type]           %(levelname)s
 [location]       %(pathname)s:%(lineno)d
 [module]         %(module)s
@@ -41,20 +40,22 @@ def get_logger(log_name):
     return logging.getLogger(log_name)
 
 
-def log_exception(log_name, trace_id, message):
+def log_exception(log_name, message, trace_id):
     """Override."""
     logger = get_logger(log_name)
     exc_info = sys.exc_info()
     if exc_info[1] is None:
         exc_info = message
-    data = ("""Path %s
+    data = ("""Trace-Id: %s
+    Path: %s
     HTTP Method: %s
     Client IP Address: %s
     User Agent: %s
     User Platform: %s
     User Browser: %s
     User Browser Version: %s
-    """ % (request.path,
+    """ % (trace_id,
+           request.path,
            request.method,
            request.remote_addr,
            request.user_agent.string,
@@ -63,5 +64,4 @@ def log_exception(log_name, trace_id, message):
            request.user_agent.version
            ))
     logger.error(data,
-        exc_info=exc_info,
-        extra={"trace_id": trace_id})
+        exc_info=exc_info)

@@ -160,7 +160,10 @@ class LogEx():
 
     def _process_response(self, response):
         """Handler for the Flask response hook to add in request/response tracing"""
-        response_data = json.loads(response.data)
+        try:
+            response_data = json.loads(response.data)
+        except:
+            return response
         if 'error' in response_data:
             code = response_data['error']['code']
             message = response_data['error']['message']
@@ -170,10 +173,12 @@ class LogEx():
                     response_data = json.loads(response.data)
                     response_data['error']['id'] = trace_id
                     response.data = json.dumps(response_data)
+        else:
+            return response
         if self.process_response:
             self.process_response(response, trace_id)
         if code >= 500 or code == 422:
-            log_exception("__name__", trace_id, message)
+            log_exception("__name__", message, trace_id)
         return response
 
     def jsonify_error(self, e):

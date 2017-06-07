@@ -64,7 +64,8 @@ def bad_request():
 
 @app.route('/app/ok')
 def ok():
-    return {}, 200
+    from flask import jsonify
+    return  jsonify({})
 
 
 class CustomExc(Resource):
