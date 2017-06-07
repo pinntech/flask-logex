@@ -62,6 +62,11 @@ def bad_request():
     raise BadRequest('Route Test Error')
 
 
+@app.route('/app/ok')
+def ok():
+    return {}, 200
+
+
 class CustomExc(Resource):
     def get(self):
         raise CustomException()
@@ -76,7 +81,11 @@ class BadRequestExc(Resource):
     def get(self):
         raise BadRequest('Resource Test Error')
 
+class OkResource(Resource):
+    def get(self):
+        return {}, 200
 
 api.add_resource(BadRequestExc, '/api/default')
 api.add_resource(SampleExc, '/api/sample')
 api.add_resource(CustomExc, '/api/custom')
+api.add_resource(OkResource, '/api/ok')

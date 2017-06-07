@@ -17,6 +17,7 @@ from flask import jsonify
 from logger import add_logger
 from logger import get_logger
 from logger import logex_format
+from logger import log_exception
 from trace import Tracer
 
 
@@ -37,6 +38,7 @@ class LogEx():
                  errors=None,
                  log_format=None,
                  log_map=None,
+                 trace_on=[422, 500, 501, 502, 503],
                  cache=None,
                  process_response=None):
         """
@@ -67,6 +69,7 @@ class LogEx():
         self.log_format = log_format
         self.log_map = log_map
         self.process_response = process_response
+        self.trace_on = trace_on
         if cache:
             self.tracer = Tracer(cache)
         if self.app is not None:
@@ -157,13 +160,20 @@ class LogEx():
 
     def _process_response(self, response):
         """Handler for the Flask response hook to add in request/response tracing"""
-        if self.tracer:
-            trace_id = self.tracer.set(request, response)
-            response_data = json.loads(response.data)
-            response_data['error']['id'] = trace_id
-            response.data = json.dumps(response_data)
+        response_data = json.loads(response.data)
+        if 'error' in response_data:
+            code = response_data['error']['code']
+            message = response_data['error']['message']
+            if code in self.trace_on:
+                if self.tracer:
+                    trace_id = self.tracer.set(request, response)
+                    response_data = json.loads(response.data)
+                    response_data['error']['id'] = trace_id
+                    response.data = json.dumps(response_data)
         if self.process_response:
             self.process_response(response, trace_id)
+        if code >= 500 or code == 422:
+            log_exception("__name__", trace_id, message)
         return response
 
     def jsonify_error(self, e):

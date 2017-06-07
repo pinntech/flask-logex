@@ -93,6 +93,10 @@ class LogExTest(TestCase):
         self.resource_check("/api/sample", 422)
         self.assertTrue(os.stat("./logs/application.log").st_size > 0)
 
+    def test_ok_response(self):
+        resp = self.test_client.get("/app/ok")
+        resp = self.test_client.get("/api/ok")
+
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)
         self.assertEqual(resp.status_code, code)

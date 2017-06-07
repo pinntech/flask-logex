@@ -5,9 +5,7 @@ Define all possible request exceptions of the API.
 :license: All rights reserved
 """
 
-from logger import log_exception
 from werkzeug.exceptions import HTTPException
-from logger import log_exception
 
 
 LOGEX_ERROR_MAP = {
@@ -34,10 +32,9 @@ def handle_error(e):
     """
     code = 500
     message = str(e)
-    error_id = 69
     error_type = None
     param = None
-    error = {"id": str(error_id)}
+    error = {}
 
     # HTTP
     if isinstance(e, HTTPException):
@@ -47,8 +44,6 @@ def handle_error(e):
         if hasattr(e, "data") and "message" in e.data:
             message = e.data["message"].values()[0]
             param = e.data["message"].keys()[0]
-        if code >= 500 or code == 422:
-            log_exception("__name__", error_id, message)
 
     # Custom
     error_type = e.error_type if hasattr(e, "error_type") else LOGEX_ERROR_MAP[code]
