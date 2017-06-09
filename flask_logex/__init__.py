@@ -5,42 +5,62 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
+# System
+# ~~~~~~
 import json
 import logging
 import os
-from subprocess import call
+import subprocess
+# Dependency
+# ~~~~~~~~~~
+from flask import jsonify
 from flask import request
 from werkzeug.exceptions import *  # NOQA
 from werkzeug.exceptions import default_exceptions
-from exceptions import handle_error
-from flask import jsonify
+from werkzeug.exceptions import HTTPException
+# Module Extension
+# ~~~~~~~~~~~~~~~~
+from exceptions import handle_http_exception
 from logger import add_logger
 from logger import get_logger
-from logger import logex_format
 from logger import log_exception
 from trace import Tracer
+
+
+# Defaults
+# ~~~~~~~~
+from logger import LOGEX_FORMAT
+LOGEX_MAP = {
+    'application': '__name__'
+}
+LOGEX_ERROR_MAP = {
+    400: "bad_request",
+    401: "unauthorized",
+    404: "method_not_allowed",
+    409: "conflict",
+    422: "request_failed",
+    500: "internal_server_error",
+    502: "bad_gateway",
+    503: "service_unavailable",
+    504: "gateway_timeout"
+}
+LOGEX_TRACE_ON = [422, 500, 501, 502, 503]
+LOGEX_HANDLERS = {
+    HTTPException: handle_http_exception
+}
 
 
 class LogEx():
     """LogEx Extension Class."""
 
-    levels = {50: logging.CRITICAL,
-              40: logging.ERROR,
-              30: logging.WARNING,
-              20: logging.INFO,
-              10: logging.DEBUG,
-              0: logging.NOTSET}
-
     def __init__(self,
                  app=None,
                  api=None,
-                 handle_error=None,
-                 errors=None,
-                 log_format=None,
-                 log_map=None,
-                 trace_on=[422, 500, 501, 502, 503],
                  cache=None,
-                 process_response=None):
+                 handlers=LOGEX_HANDLERS,
+                 log_format=LOGEX_FORMAT,
+                 log_map=LOGEX_MAP,
+                 trace_on=LOGEX_TRACE_ON):
         """
         Initialize LogEx Instance.
 
@@ -50,25 +70,20 @@ class LogEx():
             Optional Flask application.
         api : flask_restful.Api
             Optional Flask-RESTful Api.
-        errors : list
-            Optional list of custom HTTPExceptions specific to application.
+        handlers : dict
+            Optional dict with methods handling keyed exception.
         log_format : logging.Formatter
             Optional logging format, defaulted is in flask_logex.logger
         log_map : dict
             Optional logging map, maps log files to logging.Logger
         cache : werkzeug.contrib.cache.BaseCache
             Optional trace cache
-        process_response : function
-            Hook to override Flask process_response, function must take response as a required
-            parameter and trace_id as an optional parameter.
         """
         self.app = app
         self.api = api
-        self.handle_error = handle_error
-        self.errors = errors
+        self.handlers = handlers
         self.log_format = log_format
         self.log_map = log_map
-        self.process_response = process_response
         self.trace_on = trace_on
         if cache:
             self.tracer = Tracer(cache)
@@ -89,15 +104,6 @@ class LogEx():
         self.app = app
         self.api = api
 
-        if self.handle_error is None:
-            self.handle_error = handle_error
-        if self.errors is None:
-            self.errors = []
-        if self.log_format is None:
-            self.log_format = logex_format
-        if self.log_map is None:
-            self.log_map = {'application': '__name__'}
-
         self.logs = {}
         self.init_settings()
         self.init_logs()
@@ -112,12 +118,12 @@ class LogEx():
         self.LOG_LIST = self.log_map.keys()
         # Log file creation
         if not os.path.isdir(self.LOG_PATH):
-            call(['mkdir', '-p', self.LOG_PATH])
+            subprocess.call(['mkdir', '-p', self.LOG_PATH])
 
         for log in self.LOG_LIST:
             path = self.LOG_PATH + log + '.log'
             if not os.path.isfile(path):
-                call(['touch', path])
+                subprocess.call(['touch', path])
             self.logs[log] = path
 
     def init_logs(self):
@@ -150,15 +156,16 @@ class LogEx():
         # Default exceptions provided by werkzeug
         for code in default_exceptions:
             self.app.errorhandler(code)(self.jsonify_error)
-        # Custom application errors
-        for err in self.errors:
+        # Custom exceptions provided by handlers
+        for err in self.handlers.keys():
             self.app.errorhandler(err)(self.jsonify_error)
         # Flask-RESTful handle_error override
         if self.api:
             self.api.handle_error = self.jsonify_error
-        self.app.process_response = self._process_response
+        # Add LogEx process_response to after request
+        self.app.after_request_funcs.setdefault(None, []).append(self.process_response)
 
-    def _process_response(self, response):
+    def process_response(self, response):
         """Handler for the Flask response hook to add in request/response tracing"""
         try:
             response_data = json.loads(response.data)
@@ -175,11 +182,26 @@ class LogEx():
                     response.data = json.dumps(response_data)
         else:
             return response
-        if self.process_response:
-            self.process_response(response, trace_id)
         if code >= 500 or code == 422:
             log_exception("__name__", message, trace_id)
         return response
+
+    def handle_error(self, e):
+        """Handle error defaulted values and runs through handlers."""
+        code = 500
+        message = str(e)
+        error_type = LOGEX_ERROR_MAP[code]
+        error = dict(
+            code=code,
+            message=message,
+            type=error_type
+        )
+        error = handle_http_exception(e, error)
+        if type(e) in self.handlers:
+            func = self.handlers[type(e)]
+            if func:
+                error = func(e)
+        return error
 
     def jsonify_error(self, e):
         """Separate jsonify and handle_error."""

@@ -24,7 +24,7 @@ log_format = """
 [time]           %(asctime)s
 [message]        %(message)s"""
 
-logex_format = logging.Formatter(log_format)
+LOGEX_FORMAT = logging.Formatter(log_format)
 
 
 def add_logger(logger, log_path, log_level, log_format):
@@ -63,5 +63,6 @@ def log_exception(log_name, message, trace_id):
            request.user_agent.browser,
            request.user_agent.version
            ))
-    logger.error(data,
+    logger.error(
+        data,
         exc_info=exc_info)

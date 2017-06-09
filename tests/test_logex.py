@@ -53,6 +53,10 @@ class LogExTest(TestCase):
         self.assertEqual(self.logex.LOG_LEVEL, "INFO")
         self.assertEqual(self.logex.LOG_LIST, self.logex.log_map.keys())
 
+    def test_after_request(self):
+        funcs = self.app.after_request_funcs
+        self.assertEqual(funcs[None], [self.logex.process_response])
+
     def test_logs(self):
         log_list = self.logex.LOG_LIST
         log_path = self.logex.LOG_PATH

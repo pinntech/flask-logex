@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_logex import LogEx
 from flask_logex.exceptions import AppException
-from flask_logex.exceptions import errorhandler
 from flask_logex.logger import log_exception
 from flask_restful import Api, Resource
 from werkzeug.exceptions import BadRequest
@@ -17,11 +16,12 @@ app = Flask(__name__)
 api = Api(app)
 
 
-@errorhandler
-def handle_test(e, error):
+def handle_custom_exception(e):
+    error = {}
     if isinstance(e, CustomException):
         error["code"] = e.code
         error["message"] = e.description
+        error["type"] = e.error_type
         if e.code >= 500:
             log_exception("test_exception", error["code"], error["message"])
     return error
@@ -35,14 +35,16 @@ class SampleException(AppException):
 class CustomException(Exception):
     code = 500
     description = "Customizing handle error"
+    error_type = "custom_exceeption"
 
 
-errors = [SampleException, CustomException]
+handlers = {CustomException: handle_custom_exception,
+            SampleException: None}
+
 # cache = RedisCache()
 cache = SimpleCache()
-logex = LogEx(errors=errors,
+logex = LogEx(handlers=handlers,
               log_map=log_map,
-              handle_error=handle_test,
               cache=cache)
 logex.init_app(app, api)
 
@@ -65,7 +67,7 @@ def bad_request():
 @app.route('/app/ok')
 def ok():
     from flask import jsonify
-    return  jsonify({})
+    return jsonify({})
 
 
 class CustomExc(Resource):
@@ -82,9 +84,11 @@ class BadRequestExc(Resource):
     def get(self):
         raise BadRequest('Resource Test Error')
 
+
 class OkResource(Resource):
     def get(self):
         return {}, 200
+
 
 api.add_resource(BadRequestExc, '/api/default')
 api.add_resource(SampleExc, '/api/sample')

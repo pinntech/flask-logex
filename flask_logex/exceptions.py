@@ -8,61 +8,38 @@ Define all possible request exceptions of the API.
 from werkzeug.exceptions import HTTPException
 
 
-LOGEX_ERROR_MAP = {
-    400: "bad_request",
-    401: "unauthorized",
-    404: "method_not_allowed",
-    409: "conflict",
-    422: "request_failed",
-    500: "internal_server_error",
-    502: "bad_gateway",
-    503: "service_unavailable",
-    504: "gateway_timeout"
-}
-
-
-def handle_error(e):
+def handle_http_exception(e, error):
     """
-    Handle for exceptions thrown and returns a Flask JSON reponse.
+    Handle for HTTPException.
+
+    Defaulted in Flask-LogEx error handlers.
+    Built to handle AppException below, looking
+    for custom properties such as error_message
+    and error_type.
 
     Parameters
     ----------
     e : Exception
         An exception that is raised in the application.
-    """
-    code = 500
-    message = str(e)
-    error_type = None
-    param = None
-    error = {}
 
-    # HTTP
+    Returns
+    -------
+    dict
+        Error dictionary containining `code`, `message`, & `type`
+    """
     if isinstance(e, HTTPException):
-        code = e.code
-        message = e.error_message if hasattr(e, "error_message") else e.description
+        error["code"] = e.code
+        error["message"] = e.description
         # Reqparse error handling
         if hasattr(e, "data") and "message" in e.data:
-            message = e.data["message"].values()[0]
-            param = e.data["message"].keys()[0]
-
-    # Custom
-    error_type = e.error_type if hasattr(e, "error_type") else LOGEX_ERROR_MAP[code]
-
-    # Error
-    error["code"] = code
-    error["type"] = error_type
-    error['message'] = message
-    if param:
-        error["param"] = param
-
+            error["message"] = e.data["message"].values()[0]
+            error["param"] = e.data["message"].keys()[0]
+        # Specific to AppException
+        if hasattr(e, "error_type"):
+            error["type"] = e.error_type
+        if hasattr(e, "error_message"):
+            error['message'] = e.error_message
     return error
-
-
-def errorhandler(func):
-    def call_error_handler(e, *args, **kwargs):
-        error = handle_error(e)
-        return func(e, error, *args, **kwargs)
-    return call_error_handler
 
 
 class AppException(HTTPException):
