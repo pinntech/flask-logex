@@ -104,10 +104,8 @@ class LogExTest(TestCase):
         self.assertEqual(resp.status_code, 200)
 
     def test_none_response(self):
-        resp = self.test_client.get('/api/none')
-        self.assertEqual(resp.status_code, 200)
         resp = self.test_client.get('/app/none')
-        self.assertEqual(resp.status_code, 204)
+        self.assertEqual(resp.status_code, 200)
 
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)

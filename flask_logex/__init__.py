@@ -44,7 +44,8 @@ LOGEX_ERROR_MAP = {
     503: "service_unavailable",
     504: "gateway_timeout"
 }
-LOGEX_TRACE_ON = [422, 500, 501, 502, 503]
+LOGEX_TRACE_CODES = [422, 500, 501, 502, 503]
+LOGEX_LOG_CODES = [422, 500, 501, 502, 503]
 LOGEX_HANDLERS = {
     HTTPException: handle_http_exception
 }
@@ -60,7 +61,8 @@ class LogEx():
                  handlers=LOGEX_HANDLERS,
                  log_format=LOGEX_FORMAT,
                  log_map=LOGEX_MAP,
-                 trace_on=LOGEX_TRACE_ON):
+                 log_codes=LOGEX_LOG_CODES,
+                 trace_codes=LOGEX_TRACE_CODES,):
         """
         Initialize LogEx Instance.
 
@@ -70,21 +72,26 @@ class LogEx():
             Optional Flask application.
         api : flask_restful.Api
             Optional Flask-RESTful Api.
+        cache : werkzeug.contrib.cache.BaseCache
+            Optional trace cache
         handlers : dict
             Optional dict with methods handling keyed exception.
         log_format : logging.Formatter
             Optional logging format, defaulted is in flask_logex.logger
         log_map : dict
             Optional logging map, maps log files to logging.Logger
-        cache : werkzeug.contrib.cache.BaseCache
-            Optional trace cache
+        log_codes : list
+            List of codes which when encountered should trigger logging
+        trace_codes : list
+            List of codes that set traces when encountered
         """
         self.app = app
         self.api = api
         self.handlers = handlers
         self.log_format = log_format
         self.log_map = log_map
-        self.trace_on = trace_on
+        self.log_codes = log_codes
+        self.trace_codes = trace_codes
         if cache:
             self.tracer = Tracer(cache)
         if self.app is not None:
@@ -172,19 +179,23 @@ class LogEx():
             response_data = json.loads(response.data)
         except:
             return response
-        if 'error' in response_data:
-            code = response_data['error']['code']
-            message = response_data['error']['message']
-            if code in self.trace_on:
-                if self.tracer:
-                    trace_id = self.tracer.set(request, response)
-                    response_data = json.loads(response.data)
-                    response_data['error']['id'] = trace_id
-                    response.data = json.dumps(response_data)
-        else:
+        if not response_data:
             return response
-        if code >= 500 or code == 422:
+        if 'error' not in response_data:
+            return response
+
+        code = response_data['error']['code']
+        message = response_data['error']['message']
+        if self.tracer:
+            if code in self.trace_codes:
+                trace_id = self.tracer.set(request, response)
+                response_data = json.loads(response.data)
+                response_data['error']['id'] = trace_id
+                response.data = json.dumps(response_data)
+
+        if code in self.log_codes:
             log_exception("__name__", message, trace_id)
+
         return response
 
     def handle_error(self, e):
