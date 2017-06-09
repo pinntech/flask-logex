@@ -70,6 +70,12 @@ def ok():
     return jsonify({})
 
 
+@app.route('/app/none')
+def none():
+    from flask import jsonify
+    return jsonify(None)
+
+
 class CustomExc(Resource):
     def get(self):
         raise CustomException()
@@ -90,7 +96,13 @@ class OkResource(Resource):
         return {}, 200
 
 
+class NoneResource(Resource):
+    def get(self):
+        return None, 204
+
+
 api.add_resource(BadRequestExc, '/api/default')
 api.add_resource(SampleExc, '/api/sample')
 api.add_resource(CustomExc, '/api/custom')
 api.add_resource(OkResource, '/api/ok')
+api.add_resource(NoneResource, '/api/none')

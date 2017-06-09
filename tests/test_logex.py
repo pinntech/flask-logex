@@ -98,8 +98,16 @@ class LogExTest(TestCase):
         self.assertTrue(os.stat("./logs/application.log").st_size > 0)
 
     def test_ok_response(self):
-        self.test_client.get('/api/ok')
-        self.test_client.get('/app/ok')
+        resp = self.test_client.get('/api/ok')
+        self.assertEqual(resp.status_code, 200)
+        resp = self.test_client.get('/app/ok')
+        self.assertEqual(resp.status_code, 200)
+
+    def test_none_response(self):
+        resp = self.test_client.get('/api/none')
+        self.assertEqual(resp.status_code, 200)
+        resp = self.test_client.get('/app/none')
+        self.assertEqual(resp.status_code, 204)
 
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)
