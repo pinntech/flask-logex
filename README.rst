@@ -30,24 +30,29 @@ Features
 
 * Log levels are maintained by `ENVIRONMENT` variable.
 
-  ============= =========
-  Environment   Level
-  ============= =========
-  `local`        `INFO`
-  `development`  `WARNING`
-  `staging`      `ERROR`
-  `production`   `ERROR`
-  ============= =========
 * LogEx customization properties
-  ============ ===================================================================================
-  Property     Description
-  ============ ===================================================================================
-  `handlers`   `Dictionary keyed with exception and valued with either None or exception handler.`
-  `log_format` `Format of logging in log files.`
-  `log_map`    `Dictionary keyed with name of log file and valued with logger name.`
-  `cache`      `Werkzeug.contrib.cache object used to store traces of request of responses.`
-  `trace_on`   `List of error codes intended to trace.`
-  ============ ================================================================================
+
+Environment
+^^^^^^^^^^^
+
+============= =========
+Environment   Level
+============= =========
+`local`        `INFO`
+`development`  `WARNING`
+`staging`      `ERROR`
+`production`   `ERROR` 
+============= =========
+
+Properties
+^^^^^^^^^^ 
+Properties in initialization::
+
+  handlers:     Dictionary keyed with exception and valued with either None or exception handler.
+  log_format:   Format of logging in log files.
+  log_map:      Dictionary keyed with name of log file and valued with logger name.
+  cache:        Werkzeug.contrib.cache object used to store traces of request of responses.
+  trace_on:     List of error codes intended to trace.
 
 Installation
 ------------
@@ -64,6 +69,7 @@ Usage
 Initialization
 ^^^^^^^^^^^^^^
 Initialize without any customization.::
+
     from flask_logex import LogEx
     logex = LogEx()
 
