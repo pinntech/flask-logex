@@ -158,7 +158,8 @@ class LogEx():
             self.app.errorhandler(code)(self.jsonify_error)
         # Custom exceptions provided by handlers
         for err in self.handlers.keys():
-            self.app.errorhandler(err)(self.jsonify_error)
+            if isinstance(err, Exception):
+                self.app.errorhandler(err)(self.jsonify_error)
         # Flask-RESTful handle_error override
         if self.api:
             self.api.handle_error = self.jsonify_error
