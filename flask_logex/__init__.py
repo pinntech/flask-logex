@@ -89,6 +89,7 @@ class LogEx():
         self.loggers = loggers
         self.log_codes = log_codes
         self.trace_codes = trace_codes
+        self.tracer = None
         if cache:
             self.tracer = Tracer(cache)
         if self.app is not None:

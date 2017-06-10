@@ -100,9 +100,17 @@ class CustomExc(Resource):
         raise CustomException()
 
 
+def r():
+    raiser()
+
+
+def raiser():
+    raise SampleException('Resource Test Error')
+
+
 class SampleExc(Resource):
     def get(self):
-        raise SampleException('Resource Test Error')
+        r()
 
 
 class BadRequestExc(Resource):
