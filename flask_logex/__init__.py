@@ -179,6 +179,8 @@ class LogEx():
             return response
         if 'error' not in response_data:
             return response
+        if not hasattr(g, "_logex_exception"):
+            return response
 
         trace_id = None
         code = response_data['error']['code']
