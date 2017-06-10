@@ -3,7 +3,7 @@ import os
 import re
 from setuptools import setup, find_packages
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 if os.path.isfile('README.rst'):
     with codecs.open('README.rst', 'r', 'utf-8') as f:

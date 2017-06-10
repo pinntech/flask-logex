@@ -204,7 +204,7 @@ class LogEx():
     def handle_error(self, e):
         """Handle error defaulted values and runs through handlers."""
         g._logex_exception = e
-        code = 500
+        code = e.code if hasattr(e, "code") else 500
         message = str(e)
         error_type = LOGEX_ERROR_MAP[code]
         error = dict(
