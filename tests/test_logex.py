@@ -51,22 +51,24 @@ class LogExTest(TestCase):
     def test_settings(self):
         self.assertEqual(self.logex.LOG_PATH, "./logs/")
         self.assertEqual(self.logex.LOG_LEVEL, "INFO")
-        self.assertEqual(self.logex.LOG_LIST, self.logex.log_map.keys())
+        li = ["__name__"]
+        li.extend(self.logex.loggers.values())
+        self.assertEqual(self.logex.LOG_LIST, li)
 
     def test_after_request(self):
         funcs = self.app.after_request_funcs
         self.assertEqual(funcs[None], [self.logex.process_response])
 
     def test_logs(self):
-        log_list = self.logex.LOG_LIST
+        log_list = self.logex.logs.keys()
         log_path = self.logex.LOG_PATH
-        log_map = self.logex.log_map
         self.assertTrue(os.path.isdir(log_path))
         for log in log_list:
             path = log_path + log + '.log'
             self.assertTrue(os.path.isfile(path))
             logger = self.logs[log]
-            _logger = get_logger(log_map[log])
+            _log = "__name__" if log == "application" else log
+            _logger = get_logger(_log)
             self.assertEqual(logger, _logger)
 
     def test_logging(self):
@@ -83,10 +85,10 @@ class LogExTest(TestCase):
         self.assertEqual(test_error.error_message, _error_message)
 
     def test_resource_custom_error(self):
-        self.assertTrue(os.stat("./logs/test_exception.log").st_size == 0)
+        self.assertTrue(os.stat("./logs/custom_exception.log").st_size == 0)
         self.resource_check("/app/custom", 500)
         self.resource_check("/api/custom", 500)
-        self.assertTrue(os.stat("./logs/test_exception.log").st_size > 0)
+        self.assertTrue(os.stat("./logs/custom_exception.log").st_size > 0)
 
     def test_resource_default(self):
         self.resource_check("/app/default", 400)
@@ -105,7 +107,21 @@ class LogExTest(TestCase):
 
     def test_none_response(self):
         resp = self.test_client.get('/app/none')
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 204)
+        resp = self.test_client.get('/api/none')
+        self.assertEqual(resp.status_code, 204)
+
+    def test_boto_exception(self):
+        try:
+            import boto  # NOQA
+            self.assertTrue(os.stat("./logs/boto.log").st_size == 0)
+            resp = self.test_client.get('/app/boto')
+            self.assertEqual(resp.status_code, 500)
+            resp = self.test_client.get('/api/boto')
+            self.assertEqual(resp.status_code, 500)
+            self.assertTrue(os.stat("./logs/boto.log").st_size > 0)
+        except ImportError:
+            pass
 
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)

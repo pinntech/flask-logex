@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_logex import LogEx
 from flask_logex.exceptions import AppException
-from flask_logex.logger import log_exception
 from flask_restful import Api, Resource
 from werkzeug.exceptions import BadRequest
 from werkzeug.contrib.cache import SimpleCache
@@ -10,8 +9,6 @@ _description = "description"
 _error_code = 422
 _error_type = "test_error"
 _error_message = "test_message"
-log_map = {'application': '__name__',
-           'test_exception': 'test_exception'}
 app = Flask(__name__)
 api = Api(app)
 
@@ -22,8 +19,6 @@ def handle_custom_exception(e):
         error["code"] = e.code
         error["message"] = e.description
         error["type"] = e.error_type
-        if e.code >= 500:
-            log_exception("test_exception", error["code"], error["message"])
     return error
 
 
@@ -40,11 +35,35 @@ class CustomException(Exception):
 
 handlers = {CustomException: handle_custom_exception,
             SampleException: None}
+loggers = {CustomException: "custom_exception"}
+try:
+    from boto.exception import JSONResponseError
+    from boto.exception import DynamoDBResponseError
+
+    @app.route('/app/boto')
+    def boto_route():
+        raise DynamoDBResponseError(500, "reason")
+
+    class BotoExc(Resource):
+        def get(self):
+            raise DynamoDBResponseError(500, "reason")
+
+    def handle_boto_exception(e):
+        error = dict(code=500,
+                     message="boto_error",
+                     type="boto_error")
+        return error
+
+    api.add_resource(BotoExc, '/api/boto')
+    loggers[JSONResponseError] = "boto"
+    handlers[JSONResponseError] = handle_boto_exception
+except:
+    pass
 
 # cache = RedisCache()
 cache = SimpleCache()
 logex = LogEx(handlers=handlers,
-              log_map=log_map,
+              loggers=loggers,
               cache=cache)
 logex.init_app(app, api)
 
@@ -73,7 +92,7 @@ def ok():
 @app.route('/app/none')
 def none():
     from flask import jsonify
-    return jsonify(None)
+    return jsonify(None), 204
 
 
 class CustomExc(Resource):
