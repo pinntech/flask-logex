@@ -46,13 +46,14 @@ Environment   Level
 
 Properties
 ^^^^^^^^^^ 
-Properties in initialization::
+Customizable properties in initialization::
 
-  handlers:     Dictionary keyed with exception and valued with either None or exception handler.
-  log_format:   Format of logging in log files.
-  log_map:      Dictionary keyed with name of log file and valued with logger name.
   cache:        Werkzeug.contrib.cache object used to store traces of request of responses.
-  trace_on:     List of error codes intended to trace.
+  handlers:     Dictionary mapping exceptions to either None or the exception handlers of choice.
+  loggers:      Dictionary mapping exceptions to names of loggers.
+  log_codes:    List of code which when encountered should trigget logging.
+  log_format:   Format of logging in log files.
+  trace_code:   List of codes that set traces when encountered.
 
 Installation
 ------------
@@ -94,11 +95,11 @@ Defaults are set in flask_logex.LogEx.log_format, refer to for example. For more
 
 Loggers
 ^^^^^^^
-Set loggers property in logex before init_app. Using dict with key as the file name and the value as the logger retrieved from logging.getLogger(). Log files are created and loggers are added to the application.::
-
-    log_map = {'application': '__name__',
-               'dynamo': 'boto',
-               'sql': 'sqlalchemy'}
+Set loggers property in logex before init_app. Using dict mapping exceptions to name of logger retrieved from logging.getLogger(). The exception used should be a base class of the exceptions thrown. That way all exceptions are caught and logged to the proper log file. Log files are created and loggers are added to the application.::
+    
+    from boto.exception import JSONResponseError
+    log_map = {JSONResponseError: "boto",
+               CustomError: "custom_log_file"}
 
     logex = Logex(log_map=log_map)
 
@@ -120,12 +121,13 @@ Here is an example of a LogEx initialization with an application error and a
 custom boto error that has its own handler. Parameters include the exception and
 the error response that will be overriden on keys `code`, `message`, and `type`.::
 
+    from boto.exception import JSONResponseError
+
     def handle_boto(e, error):
-        if isinstance(e, boto.exception.JSONResponseError):
+        if isinstance(e, JSONResponseError):
             error["code"] = 500
             error["message"] = str(e.reason)
             error["type"] = "boto_exception"
-            flask_logex.logger.log_exception("boto", error["message"])
         return error
 
     class UserEmailExists(AppException):

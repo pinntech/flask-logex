@@ -3,19 +3,23 @@ import os
 import re
 from setuptools import setup, find_packages
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 if os.path.isfile('README.rst'):
     with codecs.open('README.rst', 'r', 'utf-8') as f:
         split = re.split('.. contents::', f.read())
         readme = split[1]
 
-requirements = [
+install_requirements = [
     'Flask>=0.12.1',
     'Flask-RESTful==0.3.5',
     'pytest>=2.9.2',
     'werkzeug==0.11.10',
 ]
+
+extras_requirements = {
+    'test': ['boto']
+}
 
 
 def setup_package():
@@ -45,7 +49,8 @@ def setup_package():
             'Programming Language :: Python :: 3.5',
             'Topic :: Software Development :: Libraries :: Python Modules',
         ],
-        install_requires=requirements,
+        install_requires=install_requirements,
+        extra_requires=extras_requirements,
     )
     setup(**metadata)
 

@@ -8,7 +8,7 @@ Define all possible request exceptions of the API.
 from werkzeug.exceptions import HTTPException
 
 
-def handle_http_exception(e, error):
+def handle_http_exception(e):
     """
     Handle for HTTPException.
 
@@ -27,6 +27,7 @@ def handle_http_exception(e, error):
     dict
         Error dictionary containining `code`, `message`, & `type`
     """
+    error = {}
     if isinstance(e, HTTPException):
         error["code"] = e.code
         error["message"] = e.description
