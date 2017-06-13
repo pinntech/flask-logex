@@ -35,17 +35,17 @@ class Trace(object):
     def __str__(self):
         formatted_time = datetime.fromtimestamp(self.timestamp).strftime('%Y-%m-%d %H:%M:%S')
         string = ('[-] Time:\n' +
-                  '------------\n' +
+                  '---------\n' +
                   formatted_time + '\n\n' +
                   '[-] Stack Trace:\n' +
-                  '------------\n' +
-                  self.stack_trace + '\n\n' +
+                  '----------------\n' +
+                  self.stack_trace + '\n' +
                   '[-] Request:\n' +
                   '------------\n' +
                   self.request_headers +
                   json.dumps(self.request_body, indent=4) + '\n\n'
                   '[-] Response:\n' +
-                  '------------\n' +
+                  '-------------\n' +
                   self.response_body)
         return string
 
