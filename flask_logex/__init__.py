@@ -34,7 +34,9 @@ from logger import LOGEX_FORMAT
 LOGEX_ERROR_MAP = {
     400: "bad_request",
     401: "unauthorized",
-    404: "method_not_allowed",
+    403: "forbidden",
+    404: "not_found",
+    405: "method_not_allowed",
     409: "conflict",
     422: "request_failed",
     500: "internal_server_error",
