@@ -5,6 +5,8 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
+__version__ = '0.1.0'
+
 # System
 # ~~~~~~
 import json

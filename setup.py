@@ -1,10 +1,16 @@
 import codecs
 import os
 import re
+import ast
 from setuptools import setup, find_packages
 
-__version__ = '0.1.2'
+# Read version from __init__.py
+_version_re = re.compile(r'__version__\s+=\s+(.*)')
+with open('flask_logex/__init__.py', 'rb') as f:
+    version = str(ast.literal_eval(_version_re.search(
+        f.read().decode('utf-8')).group(1)))
 
+# Read readme file for description
 if os.path.isfile('README.rst'):
     with codecs.open('README.rst', 'r', 'utf-8') as f:
         split = re.split('.. contents::', f.read())
@@ -25,7 +31,7 @@ extras_requirements = {
 def setup_package():
     metadata = dict(
         name='Flask-LogEx',
-        version=__version__,
+        version=version,
         url='https://github.com/pinntech/flask-logex',
         description='Flask Logging and Error Handling Extension.',
         long_description=readme,
