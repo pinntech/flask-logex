@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 # System
 # ~~~~~~
@@ -29,7 +29,6 @@ from logger import get_logger
 from logger import log_exception
 from trace import Tracer
 
-
 # Defaults
 # ~~~~~~~~
 from logger import LOGEX_FORMAT
@@ -41,6 +40,7 @@ LOGEX_ERROR_MAP = {
     405: "method_not_allowed",
     409: "conflict",
     422: "request_failed",
+    429: "rate_limit_exceeded",
     500: "internal_server_error",
     502: "bad_gateway",
     503: "service_unavailable",
