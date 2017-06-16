@@ -18,6 +18,7 @@ import subprocess
 from flask import g
 from flask import jsonify
 from flask import request
+from flask import _app_ctx_stack as stack
 from werkzeug.exceptions import *  # NOQA
 from werkzeug.exceptions import default_exceptions
 
@@ -88,14 +89,12 @@ class LogEx():
         """
         self.app = app
         self.api = api
+        self.cache = cache
         self.handlers = handlers
         self.log_format = log_format
         self.loggers = loggers
         self.log_codes = log_codes
         self.trace_codes = trace_codes
-        self.tracer = None
-        if cache:
-            self.tracer = Tracer(cache)
         if self.app is not None:
             self.init_app(app, api)
 
@@ -172,6 +171,23 @@ class LogEx():
             self.api.handle_error = self.jsonify_error
         # Add LogEx process_response to after request
         self.app.after_request_funcs.setdefault(None, []).append(self.process_response)
+
+    @property
+    def tracer(self):
+        """
+        Cache connection.
+
+        Lazy creation if this is the first time being accessed.
+        """
+        if not self.cache:
+            return None
+        if not stack.top:
+            return None
+        ctx = stack.top
+        if ctx is not None:
+            if not hasattr(ctx, 'logex_tracer'):
+                ctx.logex_tracer = Tracer(self.cache)
+            return ctx.logex_tracer
 
     def process_response(self, response):
         """Handler for the Flask response hook to add in request/response tracing"""
