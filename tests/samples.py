@@ -63,7 +63,7 @@ except:
 logex = LogEx(api=api,
               handlers=handlers,
               loggers=loggers,
-              cache_config={'CACHE_TYPE': 'redis'})
+              cache_config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_HOST':'ec2-54-67-77-214.us-west-1.compute.amazonaws.com', 'CACHE_DEFAULT_TIMEOUT': 300})
 logex.init_app(app)
 
 

@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.1.3'
+__version__ = '0.1.4'
 
 # System
 # ~~~~~~
@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import subprocess
+
 # Dependency
 # ~~~~~~~~~~
 from flask import g
@@ -145,8 +146,6 @@ class LogEx():
 
     def init_cache(self, app, cache_config):
         """Create the cache based on passed cache config values."""
-        print 'init_cache'
-
         base_config = app.config.copy()
         if self.cache_config:
             base_config.update(self.cache_config)
@@ -156,7 +155,7 @@ class LogEx():
 
         config.setdefault('CACHE_DEFAULT_TIMEOUT', 300)
         config.setdefault('CACHE_THRESHOLD', 500)
-        config.setdefault('CACHE_KEY_PREFIX', 'flask_cache_')
+        config.setdefault('CACHE_KEY_PREFIX', '')
         config.setdefault('CACHE_MEMCACHED_SERVERS', None)
         config.setdefault('CACHE_DIR', None)
         config.setdefault('CACHE_OPTIONS', None)
@@ -185,16 +184,15 @@ class LogEx():
         if not hasattr(app, 'extensions'):
             app.extensions = {}
 
-        app.extensions.setdefault('_logex_tracer', {})
-        app.extensions['_logex_tracer'][self] = Tracer(cache_obj(app, config, cache_args, cache_options))
-        print app.extensions['_logex_tracer'][self]
-
+        app.extensions.setdefault('logex_cache', {})
+        cache = cache_obj(app, config, cache_args, cache_options)
+        app.extensions['logex_cache'] = cache_obj(app, config, cache_args, cache_options)
 
     @property
     def tracer(self):
         app = self.app or current_app
-        return app.extensions['_logex_tracer'][self]
-
+        cache = app.extensions['logex_cache']
+        return Tracer(cache)
 
     def configure_logging(self):
         """Configure logging on the flask application."""
