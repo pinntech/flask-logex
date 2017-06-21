@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 
 # System
 # ~~~~~~
@@ -181,17 +181,23 @@ class LogEx():
         if config['CACHE_OPTIONS']:
             cache_options.update(config['CACHE_OPTIONS'])
 
-        if not hasattr(app, 'extensions'):
-            app.extensions = {}
+        self.cache_config = config
+        self.cache_args = cache_args
+        self.cache_options = cache_options
+        self.cache_obj = cache_obj
 
-        app.extensions.setdefault('logex_tracer', {})
-        cache = cache_obj(app, config, cache_args, cache_options)
-        app.extensions['logex_tracer'] = Tracer(cache_obj(app, config, cache_args, cache_options))
+    def teardown(self, exception):
+        ctx = stack.top
+        if hasattr(ctx, 'logex_tracer'):
+            ctx.logex_tracer = None
 
     @property
     def tracer(self):
-        app = self.app or current_app
-        return app.extensions['logex_tracer']
+        ctx = stack.top
+        if ctx is not None:
+            if not hasattr(ctx, 'logex_tracer'):
+                ctx.logex_tracer = Tracer(self.cache_obj(self.app, self.cache_config, self.cache_args, self.cache_options))
+            return ctx.logex_tracer
 
     def configure_logging(self):
         """Configure logging on the flask application."""
