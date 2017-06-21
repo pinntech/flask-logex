@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 
 # System
 # ~~~~~~
@@ -184,15 +184,14 @@ class LogEx():
         if not hasattr(app, 'extensions'):
             app.extensions = {}
 
-        app.extensions.setdefault('logex_cache', {})
+        app.extensions.setdefault('logex_tracer', {})
         cache = cache_obj(app, config, cache_args, cache_options)
-        app.extensions['logex_cache'] = cache_obj(app, config, cache_args, cache_options)
+        app.extensions['logex_tracer'] = Tracer(cache_obj(app, config, cache_args, cache_options))
 
     @property
     def tracer(self):
         app = self.app or current_app
-        cache = app.extensions['logex_cache']
-        return Tracer(cache)
+        return app.extensions['logex_tracer']
 
     def configure_logging(self):
         """Configure logging on the flask application."""
