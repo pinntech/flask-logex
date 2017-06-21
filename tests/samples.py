@@ -30,7 +30,7 @@ class SampleException(AppException):
 class CustomException(Exception):
     code = 500
     description = "Customizing handle error"
-    error_type = "custom_exceeption"
+    error_type = "custom_exception"
 
 
 handlers = {CustomException: handle_custom_exception,
@@ -60,12 +60,11 @@ try:
 except:
     pass
 
-# cache = RedisCache()
-cache = SimpleCache()
-logex = LogEx(handlers=handlers,
+logex = LogEx(api=api,
+              handlers=handlers,
               loggers=loggers,
-              cache=cache)
-logex.init_app(app, api)
+              cache_config={'CACHE_TYPE': 'redis'})
+logex.init_app(app)
 
 
 @app.route('/app/custom')

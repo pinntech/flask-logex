@@ -58,7 +58,7 @@ class LogEx():
     def __init__(self,
                  app=None,
                  api=None,
-                 cache=None,
+                 cache_config=None,
                  handlers=LOGEX_HANDLERS,
                  loggers=LOGEX_LOGGERS,
                  log_format=LOGEX_FORMAT,
@@ -88,18 +88,17 @@ class LogEx():
         """
         self.app = app
         self.api = api
+        self.cache_config = cache_config
         self.handlers = handlers
         self.log_format = log_format
         self.loggers = loggers
         self.log_codes = log_codes
         self.trace_codes = trace_codes
         self.tracer = None
-        if cache:
-            self.tracer = Tracer(cache)
         if self.app is not None:
-            self.init_app(app, api)
+            self.init_app(app, api, cache_config)
 
-    def init_app(self, app, api=None):
+    def init_app(self, app, api=None, cache_config=None):
         """
         Initialize LogEx Instance.
 
@@ -111,8 +110,11 @@ class LogEx():
             Optional Flask-RESTful Api.
         """
         self.app = app
-        self.api = api
-
+        if api:
+            self.api = api
+        if cache_config:
+            self.cache_config = cache_config
+        self.init_cache(app, cache_config)
         self.logs = {}
         self.init_settings()
         self.init_logs()
@@ -140,6 +142,59 @@ class LogEx():
             logger = get_logger(log)
             add_logger(logger, path, self.LOG_LEVEL, self.log_format)
             self.logs[log_file] = logger
+
+    def init_cache(self, app, cache_config):
+        """Create the cache based on passed cache config values."""
+        print 'init_cache'
+
+        base_config = app.config.copy()
+        if self.cache_config:
+            base_config.update(self.cache_config)
+        if cache_config:
+            base_config.update(cache_config)
+        config = base_config
+
+        config.setdefault('CACHE_DEFAULT_TIMEOUT', 300)
+        config.setdefault('CACHE_THRESHOLD', 500)
+        config.setdefault('CACHE_KEY_PREFIX', 'flask_cache_')
+        config.setdefault('CACHE_MEMCACHED_SERVERS', None)
+        config.setdefault('CACHE_DIR', None)
+        config.setdefault('CACHE_OPTIONS', None)
+        config.setdefault('CACHE_ARGS', [])
+        config.setdefault('CACHE_TYPE', 'null')
+        config.setdefault('CACHE_NO_NULL_WARNING', False)
+
+        cache_import = config['CACHE_TYPE']
+        if '.' not in cache_import:
+            from . import caches
+
+            try:
+                cache_obj = getattr(caches, cache_import)
+            except AttributeError:
+                raise ImportError("%s is not a valid FlaskCache backend" % (
+                                  import_me))
+        else:
+            cache_obj = import_string(import_me)
+
+        cache_args = config['CACHE_ARGS'][:]
+        cache_options = {'default_timeout': config['CACHE_DEFAULT_TIMEOUT']}
+
+        if config['CACHE_OPTIONS']:
+            cache_options.update(config['CACHE_OPTIONS'])
+
+        if not hasattr(app, 'extensions'):
+            app.extensions = {}
+
+        app.extensions.setdefault('_logex_tracer', {})
+        app.extensions['_logex_tracer'][self] = Tracer(cache_obj(app, config, cache_args, cache_options))
+        print app.extensions['_logex_tracer'][self]
+
+
+    @property
+    def tracer(self):
+        app = self.app or current_app
+        return app.extensions['_logex_tracer'][self]
+
 
     def configure_logging(self):
         """Configure logging on the flask application."""
