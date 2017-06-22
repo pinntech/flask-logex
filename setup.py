@@ -17,10 +17,10 @@ if os.path.isfile('README.rst'):
         readme = split[1]
 
 install_requirements = [
-    'Flask>=0.12.1',
-    'Flask-RESTful==0.3.5',
-    'pytest>=2.9.2',
-    'werkzeug==0.11.10',
+    'Flask',
+    'Flask-RESTful',
+    'pytest',
+    'werkzeug',
 ]
 
 extras_requirements = {
