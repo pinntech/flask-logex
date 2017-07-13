@@ -27,7 +27,6 @@ from werkzeug.exceptions import default_exceptions
 # ~~~~~~~~~~~~~~~~
 from exceptions import handle_http_exception
 from logger import add_logger
-from logger import get_logger
 from logger import log_exception
 from trace import Tracer
 
@@ -88,14 +87,18 @@ class LogEx():
         trace_codes : list
             List of codes that set traces when encountered.
         """
-        self.app = app
-        self.api = api
-        self.cache_config = cache_config
-        self.handlers = handlers
+        # Log
         self.log_format = log_format
         self.loggers = loggers
         self.log_codes = log_codes
+        # Exception
+        self.handlers = handlers
+        # Trace
+        self.cache_config = cache_config
         self.trace_codes = trace_codes
+        # Application
+        self.app = app
+        self.api = api
         if self.app is not None:
             self.init_app(app, api, cache_config)
 
@@ -116,33 +119,43 @@ class LogEx():
         if cache_config:
             self.cache_config = cache_config
         self.init_cache(app, cache_config)
-        self.logs = {}
         self.init_settings()
         self.init_logs()
-        self.configure_logging()
         self.configure_exceptions()
 
     def init_settings(self):
         """Initialize settings from environment variables."""
         self.ENVIRONMENT = os.environ.get('ENVIRONMENT', 'local')
-        self.APPLICATION_LOG = os.environ.get("APPLICATION_LOG", "application")
         self.LOG_PATH = os.environ.get("LOG_PATH", "./logs/")
-        self.LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
-        self.LOG_LIST = ["__name__"]
-        self.LOG_LIST.extend(self.loggers.values())
+        self.LOG_LEVEL = os.environ.get("LOG_LEVEL", logging.INFO)
+        # Log Directory
+        if not os.path.isdir(self.LOG_PATH):
+            try:
+                subprocess.call(['mkdir', '-p', self.LOG_PATH])
+            except:
+                raise StandardError("Unable to make log directory at {}".format(self.LOG_PATH))
 
     def init_logs(self):
-        """Log files property."""
-        # Log directory
-        if not os.path.isdir(self.LOG_PATH):
-            subprocess.call(['mkdir', '-p', self.LOG_PATH])
+        """Configure logging on the flask application."""
+        if self.app is None:
+            raise AttributeError("Logex is not initialized, run init_app")
+
+        # Environment controlled loggging level
+        if self.ENVIRONMENT == 'local':
+            self.LOG_LEVEL = logging.INFO
+        elif self.ENVIRONMENT == 'development':
+            self.LOG_LEVEL = logging.WARNING
+        else:
+            self.LOG_LEVEL = logging.ERROR
+
+        self.logs = {}
+
         # Loggers
-        for log in self.LOG_LIST:
-            log_file = self.APPLICATION_LOG if log == "__name__" else log
-            path = self.LOG_PATH + log_file + '.log'
-            logger = get_logger(log)
-            add_logger(logger, path, self.LOG_LEVEL, self.log_format)
-            self.logs[log_file] = logger
+        loggers = self.loggers.values()
+        loggers.append(self.app.logger_name)
+        for log_name in loggers:
+            logger = add_logger(log_name, self)
+            self.logs[log_name] = logger
 
     def init_cache(self, app, cache_config):
         """Create the cache based on passed cache config values."""
@@ -171,9 +184,9 @@ class LogEx():
                 cache_obj = getattr(caches, cache_import)
             except AttributeError:
                 raise ImportError("%s is not a valid FlaskCache backend" % (
-                                  import_me))
+                                  import_me))  # NOQA
         else:
-            cache_obj = import_string(import_me)
+            cache_obj = import_string(import_me)  # NOQA
 
         cache_args = config['CACHE_ARGS'][:]
         cache_options = {'default_timeout': config['CACHE_DEFAULT_TIMEOUT']}
@@ -196,23 +209,14 @@ class LogEx():
         ctx = stack.top
         if ctx is not None:
             if not hasattr(ctx, 'logex_tracer'):
-                ctx.logex_tracer = Tracer(self.cache_obj(self.app, self.cache_config, self.cache_args, self.cache_options))
+                ctx.logex_tracer = Tracer(
+                    self.cache_obj(
+                        self.app,
+                        self.cache_config,
+                        self.cache_args,
+                        self.cache_options)
+                )
             return ctx.logex_tracer
-
-    def configure_logging(self):
-        """Configure logging on the flask application."""
-        if self.app is None:
-            raise AttributeError("Logex is not initialized, run init_app")
-        # Log format
-        self.app.debug_log_format = self.log_format
-        if self.ENVIRONMENT == 'local':
-            LOG_LEVEL = logging.INFO
-        elif self.ENVIRONMENT == 'development':
-            LOG_LEVEL = logging.WARNING
-        else:
-            LOG_LEVEL = logging.ERROR
-        # Set application log level
-        self.app.logger.setLevel(LOG_LEVEL)
 
     def configure_exceptions(self):
         """Configure exception handler for Flask and Flask-Restful."""
@@ -262,7 +266,7 @@ class LogEx():
                 logger_name = self.loggers[key]
                 log_exception(logger_name, message, trace_id)
             else:
-                log_exception("__name__", message, trace_id)
+                log_exception(self.app.logger_name, message, trace_id)
         return response
 
     def handle_error(self, e):

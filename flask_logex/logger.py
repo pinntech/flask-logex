@@ -14,30 +14,60 @@ from flask import request
 
 
 ''' Define the logging format '''
-log_format = """
--------------------------------------------------------------------------------
-
-[type]           %(levelname)s
-[location]       %(pathname)s:%(lineno)d
-[module]         %(module)s
-[function]       %(funcName)s
-[time]           %(asctime)s
-[message]        %(message)s"""
+log_format = (
+    '-' * 80 + '\n' +
+    """
+    [type]           %(levelname)s
+    [location]       %(pathname)s:%(lineno)d
+    [module]         %(module)s
+    [function]       %(funcName)s
+    [time]           %(asctime)s
+    [message]        %(message)s\n
+    """ +
+    '-' * 80
+)
 
 LOGEX_FORMAT = logging.Formatter(log_format)
 
 
-def add_logger(logger, log_path, log_level, log_format):
-    """Add logger from logging.getLogger."""
-    logger.setLevel(log_level)
-    log_file_handler = logging.FileHandler(log_path)
-    log_file_handler.setLevel(log_level)
-    log_file_handler.setFormatter(log_format)
-    logger.addHandler(log_file_handler)
+def _should_log_for(app, mode):
+    policy = app.config['LOGGER_HANDLER_POLICY']
+    if policy == mode or policy == 'always':
+        return True
+    return False
 
 
 def get_logger(log_name):
     return logging.getLogger(log_name)
+
+
+def add_logger(log_name, logex):
+    """Add logger from logging.getLogger."""
+    app = logex.app
+    log_path = logex.LOG_PATH + log_name + ".log"
+    logger = get_logger(log_name)
+
+    if len(logger.handlers):
+        del logger.handlers[:]
+
+    class DebugHandler(logging.StreamHandler):
+        def emit(self, record):
+            if app.debug and _should_log_for(app, 'debug'):
+                logging.StreamHandler.emit(self, record)
+
+    logger.setLevel(logex.LOG_LEVEL)
+
+    debug_handler = DebugHandler()
+    debug_handler.setLevel(logging.DEBUG)
+    debug_handler.setFormatter(logex.log_format)
+
+    file_handler = logging.FileHandler(log_path)
+    file_handler.setLevel(logex.LOG_LEVEL)
+    file_handler.setFormatter(log_format)
+
+    logger.addHandler(file_handler)
+    logger.addHandler(debug_handler)
+    return logger
 
 
 def log_exception(log_name, message, trace_id):

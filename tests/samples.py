@@ -3,13 +3,12 @@ from flask_logex import LogEx
 from flask_logex.exceptions import AppException
 from flask_restful import Api, Resource
 from werkzeug.exceptions import BadRequest
-from werkzeug.contrib.cache import SimpleCache
 
 _description = "description"
 _error_code = 422
 _error_type = "test_error"
 _error_message = "test_message"
-app = Flask(__name__)
+app = Flask("app")
 api = Api(app)
 
 
@@ -60,11 +59,16 @@ try:
 except:
     pass
 
-logex = LogEx(api=api,
+
+cache_config = {'CACHE_TYPE': 'redis',
+                'CACHE_REDIS_HOST': 'ec2-54-67-77-214.us-west-1.compute.amazonaws.com',
+                'CACHE_DEFAULT_TIMEOUT': 300}
+
+logex = LogEx(app=app,
+              api=api,
               handlers=handlers,
               loggers=loggers,
-              cache_config={'CACHE_TYPE': 'redis', 'CACHE_REDIS_HOST':'ec2-54-67-77-214.us-west-1.compute.amazonaws.com', 'CACHE_DEFAULT_TIMEOUT': 300})
-logex.init_app(app)
+              cache_config=None)
 
 
 @app.route('/app/custom')

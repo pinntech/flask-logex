@@ -1,12 +1,13 @@
 """Test Logex Initization and Error Handling"""
 
 import json
+import logging
 import os
 import subprocess
+from flask_logex.logger import log_exception, get_logger
 from unittest import TestCase
 from werkzeug.exceptions import HTTPException
 
-from flask_logex.logger import log_exception, get_logger
 from samples import app, api, logex
 from samples import _description
 from samples import _error_message
@@ -14,7 +15,7 @@ from samples import _error_type
 from samples import SampleException
 
 
-class LogExTest(TestCase):
+class LogExTests(TestCase):
 
     environ = {'SERVER_NAME': 'localhost',
                'wsgi.url_scheme': 'http',
@@ -50,32 +51,32 @@ class LogExTest(TestCase):
 
     def test_settings(self):
         self.assertEqual(self.logex.LOG_PATH, "./logs/")
-        self.assertEqual(self.logex.LOG_LEVEL, "INFO")
-        li = ["__name__"]
-        li.extend(self.logex.loggers.values())
-        self.assertEqual(self.logex.LOG_LIST, li)
-
-    def test_after_request(self):
-        funcs = self.app.after_request_funcs
-        self.assertEqual(funcs[None], [self.logex.process_response])
+        self.assertEqual(self.logex.LOG_LEVEL, logging.INFO)
+        li = logex.logs.keys()
+        self.assertIn(self.app.logger_name, li)
 
     def test_logs(self):
         log_list = self.logex.logs.keys()
         log_path = self.logex.LOG_PATH
         self.assertTrue(os.path.isdir(log_path))
-        for log in log_list:
-            path = log_path + log + '.log'
+        for log_name in log_list:
+            path = log_path + log_name + '.log'
             self.assertTrue(os.path.isfile(path))
-            logger = self.logs[log]
-            _log = "__name__" if log == "application" else log
-            _logger = get_logger(_log)
+            logger = self.logs[log_name]
+            _logger = get_logger(log_name)
             self.assertEqual(logger, _logger)
 
-    def test_logging(self):
-        application_log = "./logs/application.log"
-        self.assertTrue(os.stat(application_log).st_size == 0)
-        log_exception("__name__", "application_id", "application")
-        self.assertTrue(os.stat(application_log).st_size > 0)
+    def test_0_logging(self):
+        for log_name in self.logex.logs.keys():
+            log = self.logex.LOG_PATH + log_name + ".log"
+            self.assertTrue(os.stat(log).st_size == 0)
+            log_exception(log_name, "message", "trace_id")
+            self.assertTrue(os.stat(log).st_size > 0)
+            open(log, 'w').close()
+
+    def test_after_request(self):
+        funcs = self.app.after_request_funcs
+        self.assertEqual(funcs[None], [self.logex.process_response])
 
     def test_sample_error(self):
         test_error = SampleException(_description)
@@ -97,7 +98,7 @@ class LogExTest(TestCase):
     def test_resource_sample(self):
         self.resource_check("/app/sample", 422)
         self.resource_check("/api/sample", 422)
-        self.assertTrue(os.stat("./logs/application.log").st_size > 0)
+        self.assertTrue(os.stat("./logs/app.log").st_size > 0)
 
     def test_ok_response(self):
         resp = self.test_client.get('/api/ok')
