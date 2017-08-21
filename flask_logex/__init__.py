@@ -231,7 +231,11 @@ class LogEx():
                 self.app.errorhandler(err)(self.jsonify_error)
         # Flask-RESTful handle_error override
         if self.api:
+            print "api.handle_error"
             self.api.handle_error = self.jsonify_error
+        if self.app.blueprints:
+            print "GOT BLUEPRINTS"
+            print self.app.blueprints
         # Add LogEx process_response to after request
         self.app.after_request_funcs.setdefault(None, []).append(self.process_response)
 
@@ -280,6 +284,7 @@ class LogEx():
             message=message,
             type=error_type
         )
+        print 'handle_error'
         http_error = handle_http_exception(e)
         for key, value in http_error.iteritems():
             error[key] = value

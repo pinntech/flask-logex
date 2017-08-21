@@ -31,7 +31,7 @@ def handle_http_exception(e):
     if isinstance(e, HTTPException):
         error["code"] = e.code
         error["message"] = e.description
-        # Reqparse error handling
+        # Reqparse & Marshmallow error handling
         if hasattr(e, "data") and "message" in e.data:
             error["message"] = e.data["message"].values()[0]
             error["param"] = e.data["message"].keys()[0]

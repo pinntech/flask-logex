@@ -17,12 +17,11 @@ from flask import request
 log_format = (
     '-' * 80 + '\n' +
     """
-    [type]           %(levelname)s
-    [location]       %(pathname)s:%(lineno)d
-    [module]         %(module)s
-    [function]       %(funcName)s
-    [time]           %(asctime)s
-    [message]        %(message)s\n
+    [type]              %(levelname)s
+    [location]          %(pathname)s:%(lineno)d
+    [module.function]   %(module)s.%(funcName)s
+    [time]              %(asctime)s
+    %(message)s
     """ +
     '-' * 80
 )
@@ -74,25 +73,26 @@ def log_exception(log_name, message, trace_id):
     """Override."""
     logger = get_logger(log_name)
     exc_info = sys.exc_info()
-    if exc_info[1] is None:
-        exc_info = message
-    data = ("""Trace-Id: %s
-    Path: %s
-    HTTP Method: %s
-    Client IP Address: %s
-    User Agent: %s
-    User Platform: %s
-    User Browser: %s
-    User Browser Version: %s
+    data = ("""[trace-id]          %s
+    [message]           %s
+    [request]
+        Method/Path:    %s %s
+        Client IP:      %s
+        User Agent:     %s
+        Platform:       %s
+        Browser:        %s
+        Version:        %s
     """ % (trace_id,
-           request.path,
+           message,
            request.method,
+           request.path,
            request.remote_addr,
            request.user_agent.string,
            request.user_agent.platform,
            request.user_agent.browser,
            request.user_agent.version
            ))
-    logger.error(
-        data,
-        exc_info=exc_info)
+    if exc_info[1] is None:
+        logger.error(data)
+    else:
+        logger.error(data, exc_info=exc_info)
