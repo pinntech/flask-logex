@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.1.8'
+__version__ = '0.2.0'
 
 # System
 # ~~~~~~
@@ -16,6 +16,7 @@ import subprocess
 
 # Dependency
 # ~~~~~~~~~~
+from flask import Flask
 from flask import g
 from flask import jsonify
 from flask import request
@@ -32,25 +33,12 @@ from trace import Tracer
 
 # Defaults
 # ~~~~~~~~
-from logger import LOGEX_FORMAT
-LOGEX_ERROR_MAP = {
-    400: "bad_request",
-    401: "unauthorized",
-    403: "forbidden",
-    404: "not_found",
-    405: "method_not_allowed",
-    409: "conflict",
-    422: "request_failed",
-    429: "rate_limit_exceeded",
-    500: "internal_server_error",
-    502: "bad_gateway",
-    503: "service_unavailable",
-    504: "gateway_timeout"
-}
-LOGEX_TRACE_CODES = [422, 500, 501, 502, 503]
-LOGEX_LOG_CODES = [422, 500, 501, 502, 503]
-LOGEX_HANDLERS = {}
-LOGEX_LOGGERS = {}
+from defaults import __log_format__
+from defaults import __error_map__
+from defaults import __trace_codes__
+from defaults import __log_codes__
+from defaults import __handlers__
+from defaults import __loggers__
 
 
 class LogEx():
@@ -60,11 +48,11 @@ class LogEx():
                  app=None,
                  api=None,
                  cache_config=None,
-                 handlers=LOGEX_HANDLERS,
-                 loggers=LOGEX_LOGGERS,
-                 log_format=LOGEX_FORMAT,
-                 log_codes=LOGEX_LOG_CODES,
-                 trace_codes=LOGEX_TRACE_CODES,):
+                 handlers=None,
+                 loggers=None,
+                 log_format=__log_format__,
+                 log_codes=__log_codes__,
+                 trace_codes=__trace_codes__):
         """
         Initialize LogEx Instance.
 
@@ -72,14 +60,14 @@ class LogEx():
         ----------
         app : flask.Flask
             Optional Flask application.
-        api : flask_restful.Api
-            Optional Flask-RESTful Api.
+        api : flask_restful.Api or list
+            Optional Flask-RESTful Api or list of Api's.
         cache : werkzeug.contrib.cache.BaseCache
             Optional trace cache
         handlers : dict
-            Optional exception handler dict, maps exceptions to handlers.
+            Optional with default mapping exceptions to handlers.
         loggers : dict
-            Optional logging map, maps exceptions to names of loggers.
+            Optional with default mapping exceptions to names of loggers.
         log_format : logging.Formatter
             Optional logging format, defaulted is flask_logex.logger.log_format.
         log_codes : list
@@ -89,16 +77,18 @@ class LogEx():
         """
         # Log
         self.log_format = log_format
-        self.loggers = loggers
         self.log_codes = log_codes
-        # Exception
+        self.loggers = loggers
+        self.loggers.update(__loggers__)  # Default Loggers
+        # Exception Handlers
         self.handlers = handlers
+        self.handlers.update(__handlers__)  # Default Handlers
         # Trace
         self.cache_config = cache_config
         self.trace_codes = trace_codes
         # Application
         self.app = app
-        self.api = api
+        self._api = api
         if self.app is not None:
             self.init_app(app, api, cache_config)
 
@@ -110,12 +100,12 @@ class LogEx():
         ----------
         app : flask.Flask
             Flask application.
-        api : flask_restful.Api
-            Optional Flask-RESTful Api.
+        api : flask_restful.Api or list
+            Optional Flask-RESTful Api or list of Api's.
         """
         self.app = app
         if api:
-            self.api = api
+            self._api = api
         if cache_config:
             self.cache_config = cache_config
         self.init_cache(app, cache_config)
@@ -123,33 +113,54 @@ class LogEx():
         self.init_logs()
         self.configure_exceptions()
 
+    def check_app(self):
+        """App property check."""
+        if self.app is None:
+            raise AttributeError(
+                "Logex is not initialized, run init_app"
+            )
+        if type(self.app) is not Flask:
+            raise AttributeError(
+                "App is not flask.Flask"
+            )
+
+    @property
+    def api(self):
+        """Override property to conver to list of flask_restful.Api."""
+        if self._api is None:
+            return self._api
+        if type(self._api) is not list:
+            self._api = [self._api]
+        return self._api
+
     def init_settings(self):
         """Initialize settings from environment variables."""
+        self.check_app()
         self.ENVIRONMENT = os.environ.get('ENVIRONMENT', 'local')
         self.LOG_PATH = os.environ.get("LOG_PATH", "./logs/")
         self.LOG_LEVEL = os.environ.get("LOG_LEVEL", logging.INFO)
         # Log Directory
         if not os.path.isdir(self.LOG_PATH):
             try:
-                subprocess.call(['mkdir', '-p', self.LOG_PATH])
+                subprocess.call(
+                    ['mkdir', '-p', self.LOG_PATH]
+                )
             except:
-                raise StandardError("Unable to make log directory at {}".format(self.LOG_PATH))
+                raise StandardError(
+                    "Unable to make log directory at {}".format(self.LOG_PATH)
+                )
 
     def init_logs(self):
         """Configure logging on the flask application."""
-        if self.app is None:
-            raise AttributeError("Logex is not initialized, run init_app")
-
+        self.check_app()
         # Environment controlled loggging level
-        if self.ENVIRONMENT == 'local':
-            self.LOG_LEVEL = logging.INFO
-        elif self.ENVIRONMENT == 'development':
+        self.LOG_LEVEL = logging.INFO
+        if self.ENVIRONMENT == 'development':
             self.LOG_LEVEL = logging.WARNING
-        else:
+        elif self.ENVIRONMENT == 'production':
             self.LOG_LEVEL = logging.ERROR
 
         self.logs = {}
-
         # Loggers
         loggers = self.loggers.values()
         loggers.append(self.app.logger_name)
@@ -159,27 +170,38 @@ class LogEx():
 
     def init_cache(self, app, cache_config):
         """Create the cache based on passed cache config values."""
-        base_config = app.config.copy()
+        self.check_app()
+        # Use app config by default, otherwise supply cache_config
+        config = app.config.copy()
         if self.cache_config:
-            base_config.update(self.cache_config)
+            config.update(self.cache_config)
         if cache_config:
-            base_config.update(cache_config)
-        config = base_config
+            config.update(cache_config)
 
-        config.setdefault('CACHE_DEFAULT_TIMEOUT', 300)
-        config.setdefault('CACHE_THRESHOLD', 500)
-        config.setdefault('CACHE_KEY_PREFIX', '')
+        # Required to initialize
+        config.setdefault('CACHE_TYPE', 'null')
+        # Memcached + Gaememcached
         config.setdefault('CACHE_MEMCACHED_SERVERS', None)
+        config.setdefault('CACHE_KEY_PREFIX', '')
+        # Simple + Filesystem
         config.setdefault('CACHE_DIR', None)
+        config.setdefault('CACHE_THRESHOLD', 500)
+        # Redis
+        config.setdefault('CACHE_REDIS_HOST', None)
+        config.setdefault('CACHE_REDIS_PORT', None)
+        config.setdefault('CACHE_REDIS_URL', None)
+        config.setdefault('CACHE_REDIS_DB', None)
+        config.setdefault('CACHE_REDIS_PASSWORD', None)
+        config.setdefault('CACHE_KEY_PREFIX', None)
+        # Options
+        config.setdefault('CACHE_DEFAULT_TIMEOUT', 300)
         config.setdefault('CACHE_OPTIONS', None)
         config.setdefault('CACHE_ARGS', [])
-        config.setdefault('CACHE_TYPE', 'null')
         config.setdefault('CACHE_NO_NULL_WARNING', False)
 
         cache_import = config['CACHE_TYPE']
         if '.' not in cache_import:
             from . import caches
-
             try:
                 cache_obj = getattr(caches, cache_import)
             except AttributeError:
@@ -220,27 +242,29 @@ class LogEx():
 
     def configure_exceptions(self):
         """Configure exception handler for Flask and Flask-Restful."""
-        if self.app is None:
-            raise AttributeError("Logex is not initialized, run init_app")
+        self.check_app()
+        # Add LogEx process_response to after request
+        self.app.after_request_funcs.setdefault(None, []).append(self.process_response)
         # Default exceptions provided by werkzeug
         for code in default_exceptions:
             self.app.errorhandler(code)(self.jsonify_error)
+            # Register errorhandler for Blueprints
+            if self.app.blueprints:
+                for bp_name in self.app.blueprints:
+                    bp = self.app.blueprints[bp_name]
+                    bp.errorhandler(code)(self.jsonify_error)
         # Custom exceptions provided by handlers
         for err in self.handlers.keys():
             if issubclass(err, Exception):
                 self.app.errorhandler(err)(self.jsonify_error)
         # Flask-RESTful handle_error override
         if self.api:
-            print "api.handle_error"
-            self.api.handle_error = self.jsonify_error
-        if self.app.blueprints:
-            print "GOT BLUEPRINTS"
-            print self.app.blueprints
-        # Add LogEx process_response to after request
-        self.app.after_request_funcs.setdefault(None, []).append(self.process_response)
+            for api in self.api:
+                api.handle_error = self.jsonify_error
 
     def process_response(self, response):
         """Handler for the Flask response hook to add in request/response tracing"""
+        # Check for successfulk, empty, and irrelevant responses
         try:
             response_data = json.loads(response.data)
         except:
@@ -257,6 +281,7 @@ class LogEx():
         message = response_data['error']['message']
 
         if self.tracer and code in self.trace_codes:
+            # Trace creation and dump
             trace_id = self.tracer.set(request, response)
             response_data = json.loads(response.data)
             response_data['error']['id'] = trace_id
@@ -265,6 +290,7 @@ class LogEx():
         if code in self.log_codes:
             _loggers = self.loggers.keys()
             exc_type = type(g._logex_exception)
+            # Log in custom logger, otherwise app.logger
             if issubclass(exc_type, tuple(_loggers)):
                 key = [i for i in _loggers if issubclass(exc_type, i)][0]
                 logger_name = self.loggers[key]
@@ -278,17 +304,17 @@ class LogEx():
         g._logex_exception = e
         code = e.code if hasattr(e, "code") else 500
         message = str(e)
-        error_type = LOGEX_ERROR_MAP[code]
+        error_type = __error_map__[code] if code in __error_map__ else "unknown_error"
         error = dict(
             code=code,
             message=message,
             type=error_type
         )
-        print 'handle_error'
+        # Default error handler
         http_error = handle_http_exception(e)
         for key, value in http_error.iteritems():
             error[key] = value
-
+        # Run error through custom error handlers to override response
         if type(e) in self.handlers and self.handlers[type(e)]:
             error = self.handlers[type(e)](e)
         return error

@@ -43,7 +43,6 @@ class BlueprintsTests(BaseTestCase):
         self.resource_check("/v2/app/default", 400)
         self.resource_check("/v2/api/default", 400)
 
-    """
     def test_customerror(self):
         # v1
         self.assertTrue(os.stat("./logs/custom_exception.log").st_size == 0)
@@ -51,7 +50,6 @@ class BlueprintsTests(BaseTestCase):
         self.resource_check("/v1/api/custom", 500)
         self.assertTrue(os.stat("./logs/custom_exception.log").st_size > 0)
         # v2
-        self.assertTrue(os.stat("./logs/custom_exception.log").st_size == 0)
         self.resource_check("/v2/app/custom", 500)
         self.resource_check("/v2/api/custom", 500)
         self.assertTrue(os.stat("./logs/custom_exception.log").st_size > 0)
@@ -64,7 +62,6 @@ class BlueprintsTests(BaseTestCase):
         self.resource_check("/v1/api/sample", 422)
         self.assertTrue(os.stat("./logs/{}".format(log_name)).st_size > 0)
         # v2
-        self.assertTrue(os.stat("./logs/{}".format(log_name)).st_size == 0)
         self.resource_check("/v2/app/sample", 422)
         self.resource_check("/v2/api/sample", 422)
         self.assertTrue(os.stat("./logs/{}".format(log_name)).st_size > 0)
@@ -74,21 +71,20 @@ class BlueprintsTests(BaseTestCase):
             import boto  # NOQA
             # v1
             self.assertTrue(os.stat("./logs/boto.log").st_size == 0)
-            resp = self.test_client.get('/v1//app/boto')
+            resp = self.test_client.get('/v1/app/boto')
             self.assertEqual(resp.status_code, 500)
             resp = self.test_client.get('/v1/api/boto')
             self.assertEqual(resp.status_code, 500)
             self.assertTrue(os.stat("./logs/boto.log").st_size > 0)
             # v2
-            self.assertTrue(os.stat("./logs/boto.log").st_size == 0)
-            resp = self.test_client.get('/v2//app/boto')
+            resp = self.test_client.get('/v2/app/boto')
             self.assertEqual(resp.status_code, 500)
             resp = self.test_client.get('/v2/api/boto')
             self.assertEqual(resp.status_code, 500)
             self.assertTrue(os.stat("./logs/boto.log").st_size > 0)
         except ImportError:
             pass
-    """
+
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)
         self.assertEqual(resp.status_code, code)

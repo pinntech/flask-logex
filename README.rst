@@ -1,39 +1,34 @@
 ===========
 Flask-LogEx
 ===========
-Flask Logging and Exception Extension
 
-LogEx makes error handling, exception catching, and logging
-accessible and customizable. This package allows for trace id within
-logs easy to follow and diagnose issues with application. Integrate
-a Flask application seamlessly! Flask-RESTFul is supported as well.
-
-.. contents::
+One stop shop for logging, exception handling, and consistent error responses.
+Along with all that, LogEx enables a caching mechanism for tracing purposes.
+Using trace_ids, you'll be able to diagnose issues throughout the stack trace.
 
 
-Features
---------
+Highlights
+^^^^^^^^^^
 
-* Follows werkzeug.exceptions.HTTPException protocol
+* Protocol follows werkzeug.exceptions.`HTTPException
+  <https://github.com/pallets/werkzeug/blob/master/werkzeug/exceptions.py>`_
+
+* Exceptions are caught for Flask Apps, Blueprints, and Flask-Restful Apis.
+  The goal is to have uniform responses for API's served by any Flask package.
+
+  JSON Response bodies are consistent and follow this format
+
+  .. code-block:: json
+  {
+        "error": {
+                        "message": "Error message!",
+                        "code": 500,
+                        "type": "server_error"
+                 }
+  }
 
 * Dynamic creation of loggers_ attached to appliations, log files in designated log paths
-  and customized formatting_.
-
-* Override on flask.app and flask_restful.Api error handlers to make exceptions uniform.
-
-* Extend HTTPException with application specific errors defined by either the error code or type.
-
-* Optionality to use trace id for log traceback, generated at request or response.
-
-* Default exception handling for HTTPException with ability to extend in handlers_ property.
-  See `flask_logex.exceptions.handle_error`.
-
-* Log levels are maintained by `ENVIRONMENT` variable.
-
-* LogEx customization properties
-
-Environment
-^^^^^^^^^^^
+  and customized formatting_. Log levels can be controlled with `ENVIRONMENT` env.
 
 ============= =========
 Environment   Level
@@ -41,19 +36,25 @@ Environment   Level
 `local`        `INFO`
 `development`  `WARNING`
 `staging`      `ERROR`
-`production`   `ERROR` 
+`production`   `ERROR`
 ============= =========
 
-Properties
-^^^^^^^^^^ 
-Customizable properties in initialization::
+* Default exception handling for HTTPException with ability to extend in handlers_ property.
+  See `flask_logex.exceptions.handle_error`.
 
-  cache:        Werkzeug.contrib.cache object used to store traces of request of responses.
-  handlers:     Dictionary mapping exceptions to either None or the exception handlers of choice.
-  loggers:      Dictionary mapping exceptions to names of loggers.
-  log_codes:    List of code which when encountered should trigget logging.
-  log_format:   Format of logging in log files.
-  trace_code:   List of codes that set traces when encountered.
+* Optionality to use a cache_ mechanism log traceback, trace ids will be able to be used to query
+  request and responses that had a bug.
+
+* `flask_logex.defaults
+  <https://github.com/pinntech/flask-logex/blob/master/flask_logex/defaults.py>`_
+  contains base values for everything discussed.
+        - Boto integration with own handler and logger
+        - Webargs Validation Error response handling is one to one with reqparse,
+          the two most common Flask parsers
+        - Log format with most verbosity
+        - Log and trace codes specifies which error codes take action
+
+.. contents::
 
 Installation
 ------------
@@ -64,8 +65,18 @@ Installation
 4. To install `python setup.py install`
 5. To test `pytest -s tests`
 
+Pip Install
+
+`pip install git+https://github.com/pinntech/flask-logex.git@__version__#egg=flask-logex`
+
+Once we release `1.0.0`, we will publish to pip public repository
+
+
 Usage
 -----
+
+Examples dicussed can be found within the repository at `tests/samples.py
+<https://github.com/pinntech/flask-logex/blob/master/tests/samples.py>`_
 
 Initialization
 ^^^^^^^^^^^^^^
@@ -81,36 +92,58 @@ Initialize without any customization.::
     api = Api(app)
     logex.init_app(app, api)
 
+Blueprints example.::
+
+    from flask_logex import LogEx
+    logex = LogEx()
+
+    from flask import Flask, Blueprint
+    from flask_restful import Api
+
+    bp_v1 = Blueprint('v1', url_prefix='/v1')
+    api_v1 = Api(bp_v1)
+    bp_v2 = Blueprint('v2', url_prefix='/v2')
+    api_v2 = Api(bp_v2)
+
+    app = Flask(__name__)
+    app.register_blueprint(bp_v1)
+    app.register_blueprint(bp_v2)
+    logex.init_app(app, [api_v1, api_v2])
+
 .. _formatting:
 
 Formatting
 ^^^^^^^^^^
-Defaults are set in flask_logex.LogEx.log_format, refer to for example. For more on log formats refer to `logrecord-attributes <https://docs.python.org/3/library/logging.html#logrecord-attributes>`_.::
+Defaults are set in flask_logex.LogEx.log_format, refer to for example. For more on log
+formats refer to `logrecord-attributes
+<https://docs.python.org/3/library/logging.html#logrecord-attributes>`_.::
 
     log_format = """%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]"""
-
+    log_format = logging.Formatter(log_format)
     logex = Logex(log_format=log_format)
 
 .. _loggers:
 
 Loggers
 ^^^^^^^
-Set loggers property in logex before init_app. Using dict mapping exceptions to name of logger retrieved from logging.getLogger(). The exception used should be a base class of the exceptions thrown. That way all exceptions are caught and logged to the proper log file. Log files are created and loggers are added to the application.::
-    
-    from boto.exception import JSONResponseError
-    log_map = {JSONResponseError: "boto",
-               CustomError: "custom_log_file"}
+Set loggers property in logex before init_app. Using dict mapping exceptions to name
+of logger retrieved from logging.getLogger(). Use the base class of the exceptions thrown,
+ensuring all exceptions are caught and logged to the proper log file. Log files are
+created and loggers are added to the application.::
 
-    logex = Logex(log_map=log_map)
+    from boto.compat import StandardError
+    loggers = {StandardError: "boto",
+               CustomError: "custom"}
+
+    logex = Logex(loggers=loggers)
 
 .. _handlers:
 
 Exceptions and Handlers
 ^^^^^^^^^^^^^^^^^^^^^^^
-Custom exceptions and handlers are key and simple to initialize. When initializing
-LogEx, utilize a dictionary that is keyed with the exception class (recommend using
-base classes if possible)and valued with either the handler for that class or None
-is no handle needed. By default, exceptions will be checked for a HTTPException
+When initializing LogEx, utilize a dictionary that is keyed with the exception class
+(recommend using base classes when possible) and valued with either the handler for that
+class or None is no handle needed. By default, exceptions will be checked for a HTTPException
 in `flask_logex.exceptions.handle_http_exception`.
 
 `flask_logex.exceptions.AppException` is a provided custom exception that examples
@@ -121,10 +154,11 @@ Here is an example of a LogEx initialization with an application error and a
 custom boto error that has its own handler. Parameters include the exception and
 the error response that will be overriden on keys `code`, `message`, and `type`.::
 
-    from boto.exception import JSONResponseError
+    from boto.compat import ServerError
 
     def handle_boto(e, error):
-        if isinstance(e, JSONResponseError):
+        error = {}
+        if issubclass(e, ServerError):
             error["code"] = 500
             error["message"] = str(e.reason)
             error["type"] = "boto_exception"
@@ -134,10 +168,27 @@ the error response that will be overriden on keys `code`, `message`, and `type`.
         error_type = 'user_email_exists'
         error_message = 'Email provided is already taken!'
 
-    handlers = {JSONResponseError: handle_boto,
+    handlers = {StandardError: handle_boto,
                 UserEmailExists: None}
 
     logex = Logex(handlers=handlers)
+
+.. _cache:
+
+Cache
+^^^^^
+Cache can be configured by either initializing at init or init_app with a dictionary
+of configurations or set directly to the app.config at runtime. By default, cache is
+not turned on so tracing is not enabled. Take a look at the differect `cache types
+<http://werkzeug.pocoo.org/docs/0.12/contrib/cache/>`_..::
+
+  cache_config = {
+                        "CACHE_TYPE": "redis",
+                        "CACHE_REDIS_HOST": 'localhost',
+                        "CACHE_DEFAULT_TIMEOUT": 0
+                 }
+  logex = Logex(cache_config=cache_config)
+
 
 Contributing
 ------------

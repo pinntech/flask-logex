@@ -89,7 +89,6 @@ class BadResource(Resource):
 
 
 try:
-    from boto.exception import JSONResponseError
     from boto.exception import DynamoDBResponseError
 
     @app.route('/app/boto')
@@ -137,13 +136,6 @@ def handle_custom_exception(e):  # NOQA
     return error
 
 
-def handle_boto_exception(e):
-    error = dict(code=500,
-                 message="boto_error",
-                 type="boto_error")
-    return error
-
-
 # Logex
 handlers = {  # NOQA
     CustomException: handle_custom_exception,
@@ -154,18 +146,11 @@ loggers = {
 }
 cache_config = {
     'CACHE_TYPE': 'redis',
-    'CACHE_REDIS_HOST': 'ec2-54-67-77-214.us-west-1.compute.amazonaws.com',
+    'CACHE_REDIS_HOST': 'localhost',
     'CACHE_DEFAULT_TIMEOUT': 300
 }
-try:
-    # Adding boto loggers and handlers if able to import
-    import boto  # NOQA
-    loggers[JSONResponseError] = "boto"
-    handlers[JSONResponseError] = handle_boto_exception
-except:
-    pass
 
-print "Classic Logex"
+
 logex = LogEx(
     app=app,
     api=api,
@@ -173,13 +158,13 @@ logex = LogEx(
     loggers=loggers,
     cache_config=None
 )
-print "Blue prints config with Logex"
+
 bp_app = Flask("bp_app")
 bp_app.register_blueprint(bp1)
 bp_app.register_blueprint(bp2)
 bp_logex = LogEx(
     app=bp_app,
-    api=bp1,
+    api=[api_v1, api_v2],
     handlers=handlers,
     loggers=loggers,
     cache_config=None
