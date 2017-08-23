@@ -43,7 +43,7 @@ except ImportError:
 try:
     from webargs.flaskparser import parser
 
-    class ValidationError(HTTPException):
+    class ValidationError(Exception):
         """Validation excetion written specific to Flask-LogEx."""
         code = 400
         data = {}
@@ -51,7 +51,7 @@ try:
         def __init__(self, e):
             self.data["message"] = e.message
 
-    @parser.errorhandler
+    @parser.error_handler
     def handle_validation_error(e):
         """Webargs validation handling."""
         raise ValidationError(e)

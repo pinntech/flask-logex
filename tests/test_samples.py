@@ -50,7 +50,20 @@ class SamplesTests(BaseTestCase):
             self.assertTrue(os.stat("./logs/boto.log").st_size > 0)
         except ImportError:
             pass
-
+    """
+    def test_webargs(self):
+        try:
+            import webargs  # NOQA
+            resp = self.test_client.get('/app/webargs')
+            self.assertEqual(resp.status_code, 400)
+            data = json.loads(resp.data)
+            self.assertIsNotNone(data["error"])
+            error = data["error"]
+            self.assertIsNotNone(error["message"])
+            self.assertIsNotNone(error["type"])
+        except ImportError:
+            pass
+    """
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)
         self.assertEqual(resp.status_code, code)

@@ -106,7 +106,34 @@ try:
     api_v2.add_resource(BotoExc, '/api/boto')
 except:
     pass
+"""
+try:
+    from flask import request
+    from webargs import fields
+    from webargs.flaskparser import parser
+    sample_args = {
+        "hello": fields.Str(required=True),
+        "world": fields.Str(required=True)
+    }
 
+    @app.route('/app/webargs')
+    @bp1.route('/app/webargs')
+    @bp2.route('/app/webargs')
+    def webargs_route():
+        args = parser.parse(sample_args)  # NOQA
+        return args
+
+    class WebArgsExc(Resource):
+        def get(self):
+            args = parser.parse(sample_args, request)  # NOQA
+
+    api.add_resource(WebArgsExc, '/api/webargs')
+    api_v1.add_resource(WebArgsExc, '/api/webargs')
+    api_v2.add_resource(WebArgsExc, '/api/webargs')
+except ImportError as e:
+    print "Unable to import ValidationError"
+    pass
+"""
 # Classic Api Resource
 api.add_resource(OkResource, '/api/ok')
 api.add_resource(NoneResource, '/api/none')
