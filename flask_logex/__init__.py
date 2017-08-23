@@ -78,11 +78,13 @@ class LogEx():
         # Log
         self.log_format = log_format
         self.log_codes = log_codes
-        self.loggers = loggers
-        self.loggers.update(__loggers__)  # Default Loggers
+        self.loggers = __loggers__
+        if loggers:
+            self.loggers.update(loggers)
         # Exception Handlers
-        self.handlers = handlers
-        self.handlers.update(__handlers__)  # Default Handlers
+        self.handlers = __handlers__
+        if handlers:
+            self.handlers.update(handlers)
         # Trace
         self.cache_config = cache_config
         self.trace_codes = trace_codes
