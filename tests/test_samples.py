@@ -54,6 +54,7 @@ class SamplesTests(BaseTestCase):
             self.assertTrue(self.file_size("boto.log") == 0)
             resp = self.test_client.get('/app/boto')
             self.assertEqual(resp.status_code, 500)
+            self.assertTrue(self.file_size("boto.log") > 0)
 
             size = self.file_size("boto.log")
             resp = self.test_client.get('/api/boto')

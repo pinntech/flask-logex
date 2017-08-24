@@ -81,6 +81,7 @@ class BlueprintsTests(BaseTestCase):
             self.assertTrue(self.file_size("boto.log") == 0)
             resp = self.test_client.get('/v1/app/boto')
             self.assertEqual(resp.status_code, 500)
+            self.assertTrue(self.file_size("boto.log") > 0)
             size = self.file_size("boto.log")
             resp = self.test_client.get('/v1/api/boto')
             self.assertEqual(resp.status_code, 500)
