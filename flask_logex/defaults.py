@@ -33,7 +33,7 @@ try:
                 error["message"] = str(e.reason)
             if hasattr("message", e):
                 error["message"] = str(e.message)
-    # Add logger and exception handler to logex defaults
+    # Add logger and exception handler to logex default
     # Handling for all base error classes within boto
     __loggers__[BotoClientError] = "boto"
     __loggers__[BotoServerError] = "boto"
