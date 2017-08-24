@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 
 # System
 # ~~~~~~

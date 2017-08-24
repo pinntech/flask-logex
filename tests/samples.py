@@ -5,7 +5,7 @@ from flask_restful import Api, Resource
 from werkzeug.exceptions import BadRequest
 
 app = Flask("app")
-# app.config["DEBUG"] = True
+app.config["DEBUG"] = True
 api = Api(app)
 
 bp1 = Blueprint('v1', import_name='v1', url_prefix='/v1')

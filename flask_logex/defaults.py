@@ -19,6 +19,8 @@ __loggers__ = {}
 #
 try:
     from boto.exception import BotoClientError
+    from boto.exception import BotoServerError
+    from boto.exception import JSONResponseError
 
     def handle_boto_error(e):
         """Custom boto error handler for when boto is used."""
@@ -32,8 +34,13 @@ try:
             if hasattr("message", e):
                 error["message"] = str(e.message)
     # Add logger and exception handler to logex defaults
+    # Handling for all base error classes within boto
     __loggers__[BotoClientError] = "boto"
+    __loggers__[BotoServerError] = "boto"
+    __loggers__[JSONResponseError] = "boto"
     __handlers__[BotoClientError] = handle_boto_error
+    __handlers__[BotoServerError] = handle_boto_error
+    __handlers__[JSONResponseError] = handle_boto_error
 except ImportError:
     pass
 
