@@ -22,6 +22,7 @@ class BaseTestCase(TestCase):
             cls.api = [api_v1, api_v2]
             cls.logex = bp_logex
         # App test client, config, and context
+        cls.log_name = cls.app.name + ".log"
         cls.app.config['DEBUG'] = cls.DEBUG
         cls.ac = cls.app.app_context()
         cls.test_client = cls.app.test_client()

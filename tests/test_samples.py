@@ -23,38 +23,49 @@ class SamplesTests(BaseTestCase):
         self.assertEqual(resp.status_code, 204)
 
     def test_badrequest(self):
-        self.resource_check("/app/default", 400)
-        self.resource_check("/api/default", 400)
+        self.resource_check("/app/bad", 400)
+        self.resource_check("/api/bad", 400)
 
     def test_sampleexception(self):
-        log_name = self.app.name + ".log"
-        self.assertTrue(os.stat("./logs/{}".format(log_name)).st_size == 0)
+        size = self.file_size(self.log_name)
         self.resource_check("/app/sample", 422)
+        self.assertTrue(self.file_size(self.log_name) > size)
+
+        size = self.file_size(self.log_name)
         self.resource_check("/api/sample", 422)
-        self.assertTrue(os.stat("./logs/{}".format(log_name)).st_size > 0)
+        self.assertTrue(self.file_size(self.log_name) > size)
 
     def test_customerror(self):
-        self.assertTrue(os.stat("./logs/custom_exception.log").st_size == 0)
+        size = self.file_size("custom_exception.log")
+        self.assertTrue(size == 0)
         self.resource_check("/app/custom", 500)
         self.resource_check("/api/custom", 500)
-        self.assertTrue(os.stat("./logs/custom_exception.log").st_size > 0)
+        self.assertTrue(self.file_size("custom_exception.log") > size)
+
+    def test_error(self):
+        size = self.file_size(self.log_name)
+        # self.resource_check("/app/error", 500)
+        self.resource_check("/api/error", 500)
+        self.assertTrue(self.file_size(self.log_name) > size)
 
     def test_boto(self):
         try:
             import boto  # NOQA
-            self.assertTrue(os.stat("./logs/boto.log").st_size == 0)
+            self.assertTrue(self.file_size("boto.log") == 0)
             resp = self.test_client.get('/app/boto')
             self.assertEqual(resp.status_code, 500)
+
+            size = self.file_size("boto.log")
             resp = self.test_client.get('/api/boto')
             self.assertEqual(resp.status_code, 500)
-            self.assertTrue(os.stat("./logs/boto.log").st_size > 0)
+            self.assertTrue(self.file_size("boto.log") > size)
         except ImportError:
             pass
-    """
+
     def test_webargs(self):
         try:
             import webargs  # NOQA
-            resp = self.test_client.get('/app/webargs')
+            resp = self.test_client.get('/api/webargs')
             self.assertEqual(resp.status_code, 400)
             data = json.loads(resp.data)
             self.assertIsNotNone(data["error"])
@@ -63,7 +74,11 @@ class SamplesTests(BaseTestCase):
             self.assertIsNotNone(error["type"])
         except ImportError:
             pass
-    """
+
+    def file_size(self, log_name):
+        log_path = self.logex.LOG_PATH
+        return os.stat("{}{}".format(log_path, log_name)).st_size
+
     def resource_check(self, resource, code):
         resp = self.test_client.get(resource)
         self.assertEqual(resp.status_code, code)

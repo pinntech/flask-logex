@@ -8,7 +8,6 @@ for creating the snapshot as well as a hash to uniquely represent the request it
 :license: All rights reserved
 """
 
-import sys
 import time
 import json
 import hashlib

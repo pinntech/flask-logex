@@ -284,10 +284,13 @@ class LogEx():
 
         if self.tracer and code in self.trace_codes:
             # Trace creation and dump
-            trace_id = self.tracer.set(request, response)
-            response_data = json.loads(response.data)
-            response_data['error']['id'] = trace_id
-            response.data = json.dumps(response_data)
+            try:
+                trace_id = self.tracer.set(request, response)
+                response_data = json.loads(response.data)
+                response_data['error']['id'] = trace_id
+                response.data = json.dumps(response_data)
+            except:
+                raise AttributeError("Trace and cache for Logex not configured properly")
 
         if code in self.log_codes:
             _loggers = self.loggers.keys()

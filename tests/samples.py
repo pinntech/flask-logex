@@ -5,6 +5,7 @@ from flask_restful import Api, Resource
 from werkzeug.exceptions import BadRequest
 
 app = Flask("app")
+# app.config["DEBUG"] = True
 api = Api(app)
 
 bp1 = Blueprint('v1', import_name='v1', url_prefix='/v1')
@@ -56,11 +57,18 @@ def sample():
     raise SampleException('Route Test Error')
 
 
-@app.route('/app/default')
-@bp1.route('/app/default')
-@bp2.route('/app/default')
+@app.route('/app/bad')
+@bp1.route('/app/bad')
+@bp2.route('/app/bad')
 def bad_request():
     raise BadRequest('Route Test Error')
+
+
+@app.route('/app/error')
+@bp1.route('/app/error')
+@bp2.route('/app/error')
+def error():
+    print hello  # NOQA
 
 
 class OkResource(Resource):
@@ -88,6 +96,11 @@ class BadResource(Resource):
         raise BadRequest('Resource Test Error')
 
 
+class ErrorResource(Resource):
+    def get(self):
+        print hello  # NOQA
+
+
 try:
     from boto.exception import DynamoDBResponseError
 
@@ -97,16 +110,16 @@ try:
     def boto_route():
         raise DynamoDBResponseError(500, "reason")
 
-    class BotoExc(Resource):
+    class BotoResource(Resource):
         def get(self):
             raise DynamoDBResponseError(500, "reason")
 
-    api.add_resource(BotoExc, '/api/boto')
-    api_v1.add_resource(BotoExc, '/api/boto')
-    api_v2.add_resource(BotoExc, '/api/boto')
+    api.add_resource(BotoResource, '/api/boto')
+    api_v1.add_resource(BotoResource, '/api/boto')
+    api_v2.add_resource(BotoResource, '/api/boto')
 except:
     pass
-"""
+
 try:
     from flask import request
     from webargs import fields
@@ -133,25 +146,28 @@ try:
 except ImportError as e:
     print "Unable to import ValidationError"
     pass
-"""
+
 # Classic Api Resource
 api.add_resource(OkResource, '/api/ok')
 api.add_resource(NoneResource, '/api/none')
-api.add_resource(BadResource, '/api/default')
+api.add_resource(BadResource, '/api/bad')
 api.add_resource(SampleResource, '/api/sample')
 api.add_resource(CustomResource, '/api/custom')
+api.add_resource(ErrorResource, '/api/error')
 # Blueprint v1
 api_v1.add_resource(OkResource, '/api/ok')
 api_v1.add_resource(NoneResource, '/api/none')
-api_v1.add_resource(BadResource, '/api/default')
+api_v1.add_resource(BadResource, '/api/bad')
 api_v1.add_resource(SampleResource, '/api/sample')
 api_v1.add_resource(CustomResource, '/api/custom')
+api_v1.add_resource(ErrorResource, '/api/error')
 # Blueprint v2
 api_v2.add_resource(OkResource, '/api/ok')
 api_v2.add_resource(NoneResource, '/api/none')
-api_v2.add_resource(BadResource, '/api/default')
+api_v2.add_resource(BadResource, '/api/bad')
 api_v2.add_resource(SampleResource, '/api/sample')
 api_v2.add_resource(CustomResource, '/api/custom')
+api_v2.add_resource(ErrorResource, '/api/error')
 
 # Handlers
 def handle_custom_exception(e):  # NOQA
@@ -182,17 +198,16 @@ logex = LogEx(
     app=app,
     api=api,
     handlers=handlers,
-    loggers=loggers,
-    cache_config=None
+    loggers=loggers
 )
 
 bp_app = Flask("bp_app")
+# bp_app.config["DEBUG"] = True
 bp_app.register_blueprint(bp1)
 bp_app.register_blueprint(bp2)
 bp_logex = LogEx(
     app=bp_app,
     api=[api_v1, api_v2],
     handlers=handlers,
-    loggers=loggers,
-    cache_config=None
+    loggers=loggers
 )

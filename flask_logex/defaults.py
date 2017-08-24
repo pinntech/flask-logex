@@ -18,12 +18,12 @@ __loggers__ = {}
 # Custom Boto Logging + Exception Handler
 #
 try:
-    from boto.compat import StandardError
+    from boto.exception import BotoClientError
 
     def handle_boto_error(e):
         """Custom boto error handler for when boto is used."""
         error = {}
-        if issubclass(e, StandardError):
+        if issubclass(e, BotoClientError):
             error["code"] = 500
             error["type"] = "boto_error"
             error["message"] = "Boto exception caught!"
@@ -32,8 +32,8 @@ try:
             if hasattr("message", e):
                 error["message"] = str(e.message)
     # Add logger and exception handler to logex defaults
-    __loggers__[StandardError] = "boto"
-    __handlers__[StandardError] = handle_boto_error
+    __loggers__[BotoClientError] = "boto"
+    __handlers__[BotoClientError] = handle_boto_error
 except ImportError:
     pass
 
@@ -43,7 +43,7 @@ except ImportError:
 try:
     from webargs.flaskparser import parser
 
-    class ValidationError(Exception):
+    class ValidationError(HTTPException):
         """Validation excetion written specific to Flask-LogEx."""
         code = 400
         data = {}

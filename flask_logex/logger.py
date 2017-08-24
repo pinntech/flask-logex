@@ -26,8 +26,6 @@ log_format = (
     '-' * 80
 )
 
-LOGEX_FORMAT = logging.Formatter(log_format)
-
 
 def _should_log_for(app, mode):
     policy = app.config['LOGGER_HANDLER_POLICY']
@@ -62,7 +60,7 @@ def add_logger(log_name, logex):
 
     file_handler = logging.FileHandler(log_path)
     file_handler.setLevel(logex.LOG_LEVEL)
-    file_handler.setFormatter(log_format)
+    file_handler.setFormatter(logex.log_format)
 
     logger.addHandler(file_handler)
     logger.addHandler(debug_handler)
