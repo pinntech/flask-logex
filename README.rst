@@ -188,9 +188,9 @@ not turned on so tracing is not enabled. Take a look at the differect `cache typ
 <http://werkzeug.pocoo.org/docs/0.12/contrib/cache/>`_. ::
 
   cache_config = {
-                        "CACHE_TYPE": "redis",
-                        "CACHE_REDIS_HOST": 'localhost',
-                        "CACHE_DEFAULT_TIMEOUT": 0
+                        "LOGEX_CACHE_TYPE": "redis",
+                        "LOGEX_CACHE_REDIS_HOST": 'localhost',
+                        "LOGEX_CACHE_DEFAULT_TIMEOUT": 0
                  }
   logex = Logex(cache_config=cache_config)
 

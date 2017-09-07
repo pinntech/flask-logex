@@ -188,9 +188,9 @@ loggers = {
     CustomException: "custom_exception"
 }
 cache_config = {
-    'CACHE_TYPE': 'redis',
-    'CACHE_REDIS_HOST': 'localhost',
-    'CACHE_DEFAULT_TIMEOUT': 300
+    'LOGEX_CACHE_TYPE': 'redis',
+    'LOGEX_CACHE_REDIS_HOST': 'localhost',
+    'LOGEX_CACHE_DEFAULT_TIMEOUT': 300
 }
 
 

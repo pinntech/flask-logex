@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.2.1'
+__version__ = '0.3.0'
 
 # System
 # ~~~~~~
@@ -181,27 +181,27 @@ class LogEx():
             config.update(cache_config)
 
         # Required to initialize
-        config.setdefault('CACHE_TYPE', 'null')
+        config.setdefault('LOGEX_CACHE_TYPE', 'null')
         # Memcached + Gaememcached
-        config.setdefault('CACHE_MEMCACHED_SERVERS', None)
-        config.setdefault('CACHE_KEY_PREFIX', '')
+        config.setdefault('LOGEX_CACHE_MEMCACHED_SERVERS', None)
+        config.setdefault('LOGEX_CACHE_KEY_PREFIX', '')
         # Simple + Filesystem
-        config.setdefault('CACHE_DIR', None)
-        config.setdefault('CACHE_THRESHOLD', 500)
+        config.setdefault('LOGEX_CACHE_DIR', None)
+        config.setdefault('LOGEX_CACHE_THRESHOLD', 500)
         # Redis
-        config.setdefault('CACHE_REDIS_HOST', None)
-        config.setdefault('CACHE_REDIS_PORT', None)
-        config.setdefault('CACHE_REDIS_URL', None)
-        config.setdefault('CACHE_REDIS_DB', None)
-        config.setdefault('CACHE_REDIS_PASSWORD', None)
-        config.setdefault('CACHE_KEY_PREFIX', None)
+        config.setdefault('LOGEX_CACHE_REDIS_HOST', None)
+        config.setdefault('LOGEX_CACHE_REDIS_PORT', None)
+        config.setdefault('LOGEX_CACHE_REDIS_URL', None)
+        config.setdefault('LOGEX_CACHE_REDIS_DB', None)
+        config.setdefault('LOGEX_CACHE_REDIS_PASSWORD', None)
+        config.setdefault('LOGEX_CACHE_KEY_PREFIX', None)
         # Options
-        config.setdefault('CACHE_DEFAULT_TIMEOUT', 300)
-        config.setdefault('CACHE_OPTIONS', None)
-        config.setdefault('CACHE_ARGS', [])
-        config.setdefault('CACHE_NO_NULL_WARNING', False)
+        config.setdefault('LOGEX_CACHE_DEFAULT_TIMEOUT', 300)
+        config.setdefault('LOGEX_CACHE_OPTIONS', None)
+        config.setdefault('LOGEX_CACHE_ARGS', [])
+        config.setdefault('LOGEX_CACHE_NO_NULL_WARNING', False)
 
-        cache_import = config['CACHE_TYPE']
+        cache_import = config['LOGEX_CACHE_TYPE']
         if '.' not in cache_import:
             from . import caches
             try:
@@ -212,11 +212,11 @@ class LogEx():
         else:
             cache_obj = import_string(import_me)  # NOQA
 
-        cache_args = config['CACHE_ARGS'][:]
-        cache_options = {'default_timeout': config['CACHE_DEFAULT_TIMEOUT']}
+        cache_args = config['LOGEX_CACHE_ARGS'][:]
+        cache_options = {'default_timeout': config['LOGEX_CACHE_DEFAULT_TIMEOUT']}
 
-        if config['CACHE_OPTIONS']:
-            cache_options.update(config['CACHE_OPTIONS'])
+        if config['LOGEX_CACHE_OPTIONS']:
+            cache_options.update(config['LOGEX_CACHE_OPTIONS'])
 
         self.cache_config = config
         self.cache_args = cache_args
