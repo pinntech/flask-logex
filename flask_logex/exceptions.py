@@ -33,7 +33,13 @@ def handle_http_exception(e):
         error["message"] = e.description
         # Reqparse & Marshmallow error handling
         if hasattr(e, "data") and "message" in e.data:
-            error["message"] = e.data["message"].values()[0]
+            message = e.data["message"].values()[0]
+            if type(message) is list and message:
+                error["message"] = message.pop()
+            elif type(message) is str:
+                error["message"] = message
+            else:
+                error["message"] = "Request parameter malformed/misssing. Check `param`."
             error["param"] = e.data["message"].keys()[0]
         # Specific to AppException
         if hasattr(e, "error_type"):
