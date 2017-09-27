@@ -24,7 +24,7 @@ install_requirements = [
 ]
 
 extras_requirements = {
-    'test': ['boto']
+    'test': ['boto', 'redis']
 }
 
 

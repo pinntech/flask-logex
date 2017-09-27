@@ -5,7 +5,7 @@ Contains configuration options for local, development, staging and production.
 :license: All rights reserved
 """
 
-__version__ = '0.3.1'
+__version__ = '0.3.2'
 
 # System
 # ~~~~~~
@@ -147,10 +147,8 @@ class LogEx():
                 subprocess.call(
                     ['mkdir', '-p', self.LOG_PATH]
                 )
-            except:
-                raise StandardError(
-                    "Unable to make log directory at {}".format(self.LOG_PATH)
-                )
+            except Exception as e:
+                raise StandardError(str(e))
 
     def init_logs(self):
         """Configure logging on the flask application."""
@@ -190,7 +188,7 @@ class LogEx():
         config.setdefault('LOGEX_CACHE_THRESHOLD', 500)
         # Redis
         config.setdefault('LOGEX_CACHE_REDIS_HOST', None)
-        config.setdefault('LOGEX_CACHE_REDIS_PORT', None)
+        config.setdefault('LOGEX_CACHE_REDIS_PORT', 6379)
         config.setdefault('LOGEX_CACHE_REDIS_URL', None)
         config.setdefault('LOGEX_CACHE_REDIS_DB', None)
         config.setdefault('LOGEX_CACHE_REDIS_PASSWORD', None)
@@ -290,7 +288,7 @@ class LogEx():
                 response_data['error']['id'] = trace_id
                 response.data = json.dumps(response_data)
             except:
-                raise AttributeError("Trace and cache for Logex not configured properly")
+                return response
 
         if code in self.log_codes:
             _loggers = self.loggers.keys()

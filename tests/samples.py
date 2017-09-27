@@ -1,3 +1,4 @@
+import os
 from flask import Flask, Blueprint
 from flask_logex import LogEx
 from flask_logex.exceptions import AppException
@@ -187,9 +188,10 @@ handlers = {  # NOQA
 loggers = {
     CustomException: "custom_exception"
 }
+lcrh = os.environ.get('LOGEX_HOST', 'localhost')
 cache_config = {
     'LOGEX_CACHE_TYPE': 'redis',
-    'LOGEX_CACHE_REDIS_HOST': 'localhost',
+    'LOGEX_CACHE_REDIS_HOST': lcrh,
     'LOGEX_CACHE_DEFAULT_TIMEOUT': 300
 }
 
@@ -197,6 +199,7 @@ cache_config = {
 logex = LogEx(
     app=app,
     api=api,
+    cache_config=cache_config,
     handlers=handlers,
     loggers=loggers
 )
