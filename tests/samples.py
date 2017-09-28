@@ -199,7 +199,7 @@ cache_config = {
 logex = LogEx(
     app=app,
     api=api,
-    cache_config=cache_config,
+    # cache_config=cache_config,
     handlers=handlers,
     loggers=loggers
 )

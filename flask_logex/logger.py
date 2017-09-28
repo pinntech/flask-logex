@@ -17,9 +17,6 @@ from flask import request
 log_format = (
     '-' * 80 + '\n' +
     """
-    [type]              %(levelname)s
-    [location]          %(pathname)s:%(lineno)d
-    [module.function]   %(module)s.%(funcName)s
     [time]              %(asctime)s
     %(message)s
     """ +
@@ -73,17 +70,17 @@ def log_exception(log_name, message, trace_id):
     exc_info = sys.exc_info()
     data = ("""[trace-id]          %s
     [message]           %s
-    [request]
-        Method/Path:    %s %s
-        Client IP:      %s
-        User Agent:     %s
-        Platform:       %s
-        Browser:        %s
-        Version:        %s
+    [method]            %s
+    [url]               %s
+    [client-ip]:        %s
+    [user-agent]:       %s
+    [platform]:         %s
+    [browser]:          %s
+    [version]:          %s
     """ % (trace_id,
            message,
            request.method,
-           request.path,
+           request.url,
            request.remote_addr,
            request.user_agent.string,
            request.user_agent.platform,
